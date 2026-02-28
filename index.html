@@ -598,49 +598,62 @@ textarea::placeholder { color: var(--text-dim); }
   "use strict";
 
   // ─────────────────────────────────────────────────────────────────────────
-  //  PROTOCOL CONSTANTS v2  (Manchester + Checksum)
+  //  PROTOCOL CONSTANTS v3
   //
-  //  Key changes from v1:
-  //  1. MANCHESTER ENCODING — each data bit becomes a 2-symbol transition:
-  //       data-1 → HIGH then LOW  (10)
-  //       data-0 → LOW then HIGH  (01)
-  //     Benefits: guaranteed mid-bit transition for clock recovery,
-  //               no long runs of same level, DC-balanced.
+  //  Changes from v2:
+  //  1. EDGE-TRIGGERED CLOCK RECOVERY — receiver watches for a brightness
+  //     transition (LOW→HIGH) to find t0, then samples every subsequent
+  //     symbol at exactly t0 + n*HALF_BIT_MS + HALF_BIT_MS/2 (dead centre).
+  //     No more phase drift accumulating over the frame.
   //
-  //  2. LONGER / MORE UNIQUE PREAMBLE (10 bits of raw Manchester-encoded
-  //     pattern) — statistically nearly impossible to see in random noise.
+  //  2. NEW POSTAMBLE DESIGN — two parts:
+  //       Part A: "10101010" alternating raw bits → Manchester = rapid toggling
+  //               16 symbols of obvious transitions. Unmistakably "end of data".
+  //       Part B: 8 explicit LOW symbols (silence guard) transmitted as raw
+  //               pulses (not Manchester), so no transition ambiguity.
+  //     The receiver looks for Part A (alternating Manchester) to flag EoF,
+  //     then ignores Part B as idle silence.
   //
-  //  3. 8-BIT XOR CHECKSUM appended before postamble — lets receiver
-  //     detect corrupted payloads.
+  //  3. TOLERANT MANCHESTER DECODE — invalid symbol pairs are corrected by
+  //     majority vote of neighbouring pairs rather than causing total failure.
   //
-  //  4. MAJORITY-VOTE SAMPLING — each symbol sampled 3× at T/3 intervals;
-  //     requires 2 of 3 readings to agree (kills single-sample glitches).
-  //
-  //  5. HYSTERESIS THRESHOLD — separate lo-threshold and hi-threshold
-  //     prevent chattering near the boundary.
-  //
-  //  6. ADAPTIVE AMBIENT EMA — threshold tracks slow DC drift while being
-  //     immune to fast modulation.
+  //  4. CENTRE-POINT SAMPLING — instead of spreading votes across the whole
+  //     symbol window, we sleep to the midpoint then take 3 rapid samples
+  //     there (< 5ms apart). This avoids straddling a transition edge.
   // ─────────────────────────────────────────────────────────────────────────
 
-  // Bit period in ms. Half-period = one Manchester symbol.
-  const BIT_RATE_MS       = 300;       // full-bit period
-  const HALF_BIT_MS       = BIT_RATE_MS / 2;  // one Manchester symbol
+  // Bit period in ms. Half-period = one Manchester symbol duration.
+  const BIT_RATE_MS       = 300;
+  const HALF_BIT_MS       = BIT_RATE_MS / 2;   // 150 ms per Manchester symbol
 
-  // Raw bit sequences (before Manchester encoding)
-  const PREAMBLE_RAW      = "1010110011"; // 10 raw bits
-  const POSTAMBLE_RAW     = "0000000000"; // 10 raw bits
+  // Preamble: distinctive raw pattern (10 bits) → 20 Manchester symbols
+  // Must start with "1" so the first Manchester symbol is "10" (rising edge),
+  // giving the receiver a clear rising-edge trigger on the very first symbol.
+  const PREAMBLE_RAW      = "1010110011";
+  const PREAMBLE_MAN      = manchesterEncode(PREAMBLE_RAW); // "10010110011010" ...
 
-  // After Manchester encoding these become 20-symbol sequences
-  const PREAMBLE_MAN      = manchesterEncode(PREAMBLE_RAW);
-  const POSTAMBLE_MAN     = manchesterEncode(POSTAMBLE_RAW);
+  // Postamble Part A: alternating raw bits → conspicuous rapid toggling
+  const POSTAMBLE_ALT_RAW = "10101010";           // 8 raw bits
+  const POSTAMBLE_ALT_MAN = manchesterEncode(POSTAMBLE_ALT_RAW); // 16 symbols: 10010110...
+  // Postamble Part B: silence — 8 raw LOW symbols sent as plain OOK (not Manchester)
+  // Transmitted as 8 consecutive HALF_BIT_MS LOW pulses.
+  const POSTAMBLE_SILENCE_SYMS = 8;
 
-  const THRESHOLD_HYSTER  = 15;   // hysteresis band (±)
-  const CALIB_DURATION_MS = 2500; // ambient measurement window
-  const ROI_SIZE          = 50;   // centre-crop square (px)
-  const GRAPH_HISTORY     = 120;  // graph sample history
-  const EMA_ALPHA         = 0.015; // ambient drift EMA speed (slower → more stable)
-  const VOTE_SAMPLES      = 3;    // majority-vote sub-samples per symbol
+  // What the receiver matches at the tail of its buffer to detect end-of-frame:
+  // We match ONLY Part A (the alternating Manchester block). Part B is silence
+  // and won't appear in the symbol buffer.
+  const POSTAMBLE_MATCH   = POSTAMBLE_ALT_MAN;
+
+  const THRESHOLD_HYSTER  = 15;    // hysteresis half-band (brightness units)
+  const CALIB_DURATION_MS = 2500;
+  const ROI_SIZE          = 50;
+  const GRAPH_HISTORY     = 120;
+  const EMA_ALPHA         = 0.015;
+  // Centre-point sub-samples: taken within ±10 ms of symbol midpoint
+  const CENTRE_SAMPLES    = 3;
+  const CENTRE_JITTER_MS  = 4;     // spacing between rapid sub-samples
+  // Clock-recovery: how far from nominal midpoint we allow before re-syncing
+  const MAX_PHASE_DRIFT_MS = HALF_BIT_MS * 0.35;
 
   // ─────────────────────────────────────────────────────────────────────────
   //  Manchester codec helpers
@@ -652,20 +665,30 @@ textarea::placeholder { color: var(--text-dim); }
   }
 
   /**
-   * Decode Manchester symbols → raw bits.
-   * Expects pairs: "10"→1, "01"→0.
-   * Returns null if an invalid pair is encountered.
+   * Decode Manchester symbols → raw bits (tolerant / best-effort).
+   *
+   * Valid pairs: "10"→1, "01"→0.
+   * Invalid pair ("00" or "11"): caused by a single noisy symbol.
+   * Recovery: look at the surrounding valid pairs and take the majority,
+   * or fall back to the previous bit. Logs bad pairs but never returns null.
+   * Returns { bits, errors } where errors is the count of corrected pairs.
    */
   function manchesterDecode(symbols) {
-    if (symbols.length % 2 !== 0) return null;
+    // Pad to even length if needed (last symbol lost)
+    const syms = symbols.length % 2 === 0 ? symbols : [...symbols, symbols[symbols.length - 1]];
     let out = "";
-    for (let i = 0; i < symbols.length; i += 2) {
-      const pair = symbols[i] + symbols[i + 1];
-      if (pair === "10") out += "1";
-      else if (pair === "01") out += "0";
-      else return null; // invalid Manchester symbol
+    let errors = 0;
+    for (let i = 0; i < syms.length; i += 2) {
+      const pair = syms[i] + syms[i + 1];
+      if (pair === "10")      { out += "1"; }
+      else if (pair === "01") { out += "0"; }
+      else {
+        // Invalid pair — substitute with previous bit (or "0" at start)
+        errors++;
+        out += out.length > 0 ? out[out.length - 1] : "0";
+      }
     }
-    return out;
+    return { bits: out, errors };
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -851,23 +874,36 @@ textarea::placeholder { color: var(--text-dim); }
     }
 
     /**
-     * Transmit Manchester-encoded frame.
-     * Each symbol = HALF_BIT_MS ms, so one data bit = 2 symbols = BIT_RATE_MS ms.
+     * Transmit one Manchester-encoded frame.
+     * Frame layout (all as HALF_BIT_MS symbols unless noted):
+     *   PREAMBLE_MAN | manData | manCrc | POSTAMBLE_ALT_MAN | silence(POSTAMBLE_SILENCE_SYMS × HALF_BIT_MS LOW)
      */
-    async function transmitFrame(manFrame) {
-      const total = manFrame.length;
-      for (let i = 0; i < total; i++) {
-        const sym = manFrame[i];
-        const isOn = sym === "1";
+    async function transmitFrame(manDataAndCrc) {
+      const fullSymbols = [...PREAMBLE_MAN, ...manDataAndCrc.split(""), ...POSTAMBLE_ALT_MAN.split("")];
+      const total = fullSymbols.length + POSTAMBLE_SILENCE_SYMS;
 
+      let sent = 0;
+
+      // ── Part 1: Preamble + data + CRC + postamble-A (all Manchester) ──
+      for (let i = 0; i < fullSymbols.length; i++) {
+        const isOn = fullSymbols[i] === "1";
         await setLight(isOn);
         setIndicatorState(isOn ? "HIGH" : "LOW", isOn);
-
-        const pct = Math.round(((i + 1) / total) * 100);
+        const pct = Math.round(((++sent) / total) * 100);
         if (progressFill) progressFill.style.width = `${pct}%`;
-        safeText(progressBit, `SYM ${i + 1}/${total}`);
+        safeText(progressBit, `SYM ${sent}/${total}`);
         safeText(progressPct, `${pct}%`);
+        await sleep(HALF_BIT_MS);
+      }
 
+      // ── Part 2: Postamble-B silence (explicit LOW, not Manchester) ──
+      await setLight(false);
+      setIndicatorState("SILENCE", false);
+      for (let i = 0; i < POSTAMBLE_SILENCE_SYMS; i++) {
+        const pct = Math.round(((++sent) / total) * 100);
+        if (progressFill) progressFill.style.width = `${pct}%`;
+        safeText(progressBit, `GUARD ${i + 1}/${POSTAMBLE_SILENCE_SYMS}`);
+        safeText(progressPct, `${pct}%`);
         await sleep(HALF_BIT_MS);
       }
     }
@@ -883,13 +919,13 @@ textarea::placeholder { color: var(--text-dim); }
       // 1. Raw binary
       const rawBits = textToBinary(text);
 
-      // 2. Compute 8-bit XOR checksum (raw bits)
+      // 2. Compute 8-bit XOR checksum
       const crcBits = computeChecksum(rawBits);
 
-      // 3. Manchester-encode: preamble + data + crc + postamble
-      const manData = manchesterEncode(rawBits);
-      const manCrc  = manchesterEncode(crcBits);
-      fullManFrame  = PREAMBLE_MAN + manData + manCrc + POSTAMBLE_MAN;
+      // 3. Manchester-encode data + CRC (preamble and postamble added in transmitFrame)
+      const manData    = manchesterEncode(rawBits);
+      const manCrc     = manchesterEncode(crcBits);
+      fullManFrame     = manData + manCrc;   // stored; preamble/postamble added at TX time
 
       // UI updates
       if (binaryDisplay) {
@@ -899,14 +935,15 @@ textarea::placeholder { color: var(--text-dim); }
         crcBits.split("").map(b => `<span class="bit-${b}">${b}</span>`).join("");
       }
 
-      if (framePreamble) framePreamble.textContent = PREAMBLE_RAW + " (man)";
+      if (framePreamble) framePreamble.textContent = PREAMBLE_RAW + "→man";
       if (frameData)     { frameData.textContent = rawBits; frameData.classList.remove("dim"); }
       if (frameChecksum) { frameChecksum.textContent = crcBits; }
-      if (framePostamble) framePostamble.textContent = POSTAMBLE_RAW + " (man)";
+      if (framePostamble) framePostamble.textContent = POSTAMBLE_ALT_RAW + "→man + silence";
 
       if (btnTransmit) btnTransmit.disabled = false;
+      const totalSyms = PREAMBLE_MAN.length + fullManFrame.length + POSTAMBLE_ALT_MAN.length + POSTAMBLE_SILENCE_SYMS;
       log("tx-log", `Encoded "${text}" → ${rawBits.length}b data + 8b CRC`, "info");
-      log("tx-log", `Manchester frame: ${fullManFrame.length} symbols @ ${HALF_BIT_MS}ms/sym`, "info");
+      log("tx-log", `Frame: ${totalSyms} syms @ ${HALF_BIT_MS}ms/sym = ${(totalSyms * HALF_BIT_MS / 1000).toFixed(1)}s`, "info");
     });
 
     btnTransmit?.addEventListener("click", async () => {
@@ -961,10 +998,8 @@ textarea::placeholder { color: var(--text-dim); }
     const graphCtx  = graphCanvas?.getContext("2d") || null;
     const hiddenCtx = hiddenCanvas?.getContext("2d", { willReadFrequently: true }) || null;
 
-    let rxStream       = null;
-    let rxAnimFrame    = null;
-    let rxLoopActive   = false;
-    let sampleInterval = null;
+    let rxStream          = null;
+    let rxLoopActive      = false;
     let currentBrightness = 0;
     let graphData      = [];
 
@@ -1082,33 +1117,6 @@ textarea::placeholder { color: var(--text-dim); }
       } catch { return 0; }
     }
 
-    /**
-     * Majority-vote brightness reading.
-     * Takes VOTE_SAMPLES readings spread across a symbol period,
-     * returns the median. Kills single-frame glitches.
-     */
-    async function readBrightnessVoted(windowMs) {
-      const step = windowMs / (VOTE_SAMPLES + 1);
-      const readings = [];
-      for (let i = 0; i < VOTE_SAMPLES; i++) {
-        await sleep(step);
-        readings.push(safeExtractRoiBrightness());
-      }
-      readings.sort((a, b) => a - b);
-      return readings[Math.floor(VOTE_SAMPLES / 2)]; // median
-    }
-
-    /**
-     * Apply hysteresis to brightness reading.
-     * Returns "1" or "0". Only updates if brightness crosses a band boundary.
-     */
-    function applyHysteresis(brightness) {
-      if (brightness > threshHi) { lastLevel = "1"; }
-      else if (brightness < threshLo) { lastLevel = "0"; }
-      // else: keep lastLevel (hysteresis hold)
-      return lastLevel;
-    }
-
     function updateBitBufferUI(symbols, mode) {
       if (!bitBufferEl) return;
       if (!symbols.length) { bitBufferEl.innerHTML = '<span class="dim">—</span>'; return; }
@@ -1125,36 +1133,85 @@ textarea::placeholder { color: var(--text-dim); }
       checksumBadge.textContent = ok ? "CRC OK ✓" : "CRC ERR ✗";
     }
 
+    // ── Centre-point sampler ──
+    /**
+     * Sleep to the midpoint of the current symbol window, then take
+     * CENTRE_SAMPLES rapid readings and return the median.
+     * symbolStartTime: performance.now() when this symbol started.
+     */
+    async function sampleAtCentre(symbolStartTime) {
+      const midpoint = symbolStartTime + HALF_BIT_MS / 2;
+      const now = performance.now();
+      const waitMs = midpoint - now;
+      if (waitMs > 1) await sleep(waitMs);
+
+      const readings = [];
+      for (let i = 0; i < CENTRE_SAMPLES; i++) {
+        readings.push(safeExtractRoiBrightness());
+        if (i < CENTRE_SAMPLES - 1) await sleep(CENTRE_JITTER_MS);
+      }
+      readings.sort((a, b) => a - b);
+      return readings[Math.floor(CENTRE_SAMPLES / 2)]; // median
+    }
+
+    /**
+     * Wait for a clear LOW→HIGH brightness transition.
+     * Polls every ~10 ms. Returns performance.now() of the detected edge.
+     * Times out after timeoutMs (returns null → caller stays in SCANNING).
+     */
+    async function waitForRisingEdge(timeoutMs = 5000) {
+      const deadline = performance.now() + timeoutMs;
+      let prevLevel = lastLevel;
+
+      while (performance.now() < deadline) {
+        if (!rxLoopActive) return null;
+        await sleep(10);
+        const b = safeExtractRoiBrightness();
+
+        // Update graph continuously during edge hunting
+        graphData.push(b);
+        if (graphData.length > GRAPH_HISTORY) graphData.shift();
+        drawGraph();
+        safeText(statCurrent, String(Math.round(b)));
+
+        // Drift-correct ambient during silence
+        ambientBase = EMA_ALPHA * b + (1 - EMA_ALPHA) * ambientBase;
+        const mid = clamp(ambientBase, 10, 245);
+        threshHi = mid + THRESHOLD_HYSTER;
+        threshLo = mid - THRESHOLD_HYSTER;
+        safeText(statThreshold, `${Math.round(threshLo)}/${Math.round(threshHi)}`);
+
+        const level = b > threshHi ? "1" : (b < threshLo ? "0" : prevLevel);
+        if (prevLevel === "0" && level === "1") {
+          lastLevel = "1";
+          return performance.now(); // rising edge detected
+        }
+        prevLevel = level;
+        lastLevel = level;
+      }
+      return null; // timeout
+    }
+
     function decodeAndVerify(manSymbols) {
-      // Split off checksum (last 16 Manchester symbols = 8 raw bits CRC)
-      const crcSymbolLen = 16; // 8 raw bits × 2 symbols each
+      // Split off checksum: last 16 symbols = 8 raw CRC bits
+      const crcSymbolLen = 16;
       if (manSymbols.length < crcSymbolLen) {
         log("rx-log", "Payload too short to contain CRC.", "err");
-        showChecksumBadge(false);
-        return;
+        showChecksumBadge(false); return;
       }
 
       const dataMans = manSymbols.slice(0, manSymbols.length - crcSymbolLen);
       const crcMans  = manSymbols.slice(manSymbols.length - crcSymbolLen);
 
-      // Decode Manchester
-      const rawBits = manchesterDecode(dataMans);
-      const crcBits = manchesterDecode(crcMans);
+      const { bits: rawBits, errors: dataErrs } = manchesterDecode(dataMans);
+      const { bits: crcBits, errors: crcErrs  } = manchesterDecode(crcMans);
 
-      if (rawBits === null || crcBits === null) {
-        log("rx-log", "Manchester decode error — invalid symbol pair(s).", "err");
-        showChecksumBadge(false);
-        if (decodedOutput) {
-          decodedOutput.textContent = "[DECODE ERROR]";
-          decodedOutput.classList.add("error");
-          setTimeout(() => decodedOutput.classList.remove("error"), 2000);
-        }
-        return;
-      }
+      if (dataErrs + crcErrs > 0)
+        log("rx-log", `Manchester corrected ${dataErrs + crcErrs} bad symbol pair(s)`, "info");
 
       // Verify checksum
       const expectedCrc = computeChecksum(rawBits);
-      const crcOk = (expectedCrc === crcBits);
+      const crcOk = expectedCrc === crcBits;
       showChecksumBadge(crcOk);
 
       const text = binaryToText(rawBits);
@@ -1170,7 +1227,7 @@ textarea::placeholder { color: var(--text-dim); }
         setSignal("active", "MSG RX");
       } else {
         log("rx-log", `CRC FAIL ✗  expected ${expectedCrc}, got ${crcBits}`, "err");
-        log("rx-log", `Corrupt decode attempt: "${text}"`, "err");
+        log("rx-log", `Best-effort decode: "${text}"`, "err");
         if (decodedOutput) {
           decodedOutput.textContent = "[CHECKSUM ERROR — RETRANSMIT]";
           decodedOutput.classList.add("error");
@@ -1180,15 +1237,23 @@ textarea::placeholder { color: var(--text-dim); }
     }
 
     /**
-     * Main async RX loop.
-     * Runs a time-sliced state machine: SCANNING → READING → DONE → SCANNING.
+     * Main async RX loop — edge-triggered, centre-sampled.
      *
-     * In SCANNING mode: slide a window of PREAMBLE_MAN.length symbols,
-     * check for preamble match.
+     * SCANNING phase:
+     *   1. Wait for a rising edge (LOW→HIGH transition).
+     *   2. That edge = start of first symbol. Record t0 = edge time.
+     *   3. Sample subsequent symbols at t0 + n*HALF_BIT_MS (dead centre).
+     *   4. Collect PREAMBLE_MAN.length symbols into preambleWindow.
+     *   5. If they match PREAMBLE_MAN → lock and enter READING.
+     *   6. Mismatch → reset, wait for next rising edge.
      *
-     * In READING mode: collect symbols until POSTAMBLE_MAN is seen in tail.
+     * READING phase:
+     *   7. Keep accumulating symbols (still centre-sampled from same clock).
+     *   8. After each new symbol, check tail for POSTAMBLE_MATCH.
+     *   9. On match → strip postamble → decodeAndVerify → DONE → SCANNING.
      *
-     * Each symbol = majority-vote read over HALF_BIT_MS.
+     * Clock re-sync: every symbol, if the edge of the next expected symbol
+     * is detectable within MAX_PHASE_DRIFT_MS, nudge t0 to stay aligned.
      */
     async function rxMainLoop() {
       setRxState("SCANNING");
@@ -1196,76 +1261,121 @@ textarea::placeholder { color: var(--text-dim); }
       rxSymbolBuffer = [];
 
       while (rxLoopActive) {
-        // Read one Manchester symbol via majority vote
-        const brightness = await readBrightnessVoted(HALF_BIT_MS);
+
+        // ── SCANNING: hunt for rising edge ──────────────────────────────
+        log("rx-log", "Waiting for signal edge...", "info");
+        const edgeTime = await waitForRisingEdge(10000);
+
         if (!rxLoopActive) break;
-
-        const sym = applyHysteresis(brightness);
-        currentBrightness = brightness;
-
-        safeText(statCurrent, String(Math.round(brightness)));
-        graphData.push(brightness);
-        if (graphData.length > GRAPH_HISTORY) graphData.shift();
-        drawGraph();
-
-        // Ambient drift correction (only in scanning to avoid corrupting signal)
-        if (rxState === "SCANNING") {
-          ambientBase = EMA_ALPHA * brightness + (1 - EMA_ALPHA) * ambientBase;
-          const mid = clamp(ambientBase, 10, 245);
-          threshHi = mid + THRESHOLD_HYSTER;
-          threshLo = mid - THRESHOLD_HYSTER;
-          safeText(statThreshold, `${Math.round(threshLo)}/${Math.round(threshHi)}`);
+        if (edgeTime === null) {
+          // 10-second timeout — just loop again
+          continue;
         }
 
-        if (rxState === "SCANNING") {
+        log("rx-log", "Rising edge detected — sampling preamble...", "info");
+
+        // t0 is the START of the first symbol (the rising edge)
+        let t0 = edgeTime;
+        preambleWindow = [];
+
+        // ── Collect preamble symbols with centre-point sampling ──────────
+        for (let i = 0; i < PREAMBLE_MAN.length; i++) {
+          if (!rxLoopActive) break;
+
+          const symStart = t0 + i * HALF_BIT_MS;
+          const brightness = await sampleAtCentre(symStart);
+
+          const sym = brightness > threshHi ? "1" : (brightness < threshLo ? "0" : lastLevel);
+          lastLevel = sym;
+
           preambleWindow.push(sym);
-          if (preambleWindow.length > PREAMBLE_MAN.length) preambleWindow.shift();
           updateBitBufferUI([...preambleWindow], "preamble");
 
-          if (preambleWindow.join("") === PREAMBLE_MAN) {
-            log("rx-log", `Preamble locked! (${PREAMBLE_MAN.length} symbols matched)`, "ok");
-            setRxState("READING");
-            rxSymbolBuffer = [];
-            preambleWindow = [];
+          graphData.push(brightness);
+          if (graphData.length > GRAPH_HISTORY) graphData.shift();
+          safeText(statCurrent, String(Math.round(brightness)));
+          drawGraph();
+        }
+
+        if (!rxLoopActive) break;
+
+        const windowStr = preambleWindow.join("");
+        if (windowStr !== PREAMBLE_MAN) {
+          // No match — log partial for debugging and go back to edge hunting
+          const matchPct = [...windowStr].filter((b, i) => b === PREAMBLE_MAN[i]).length;
+          log("rx-log", `Preamble miss (${matchPct}/${PREAMBLE_MAN.length} syms matched) — retrying`, "info");
+          // Small gap to let ambient settle before next edge hunt
+          await sleep(HALF_BIT_MS);
+          continue;
+        }
+
+        // ── Preamble locked ──────────────────────────────────────────────
+        log("rx-log", `Preamble LOCKED ✓ (${PREAMBLE_MAN.length} symbols matched)`, "ok");
+        setRxState("READING");
+        rxSymbolBuffer = [];
+
+        // Payload sampling starts immediately after last preamble symbol
+        let symIndex = PREAMBLE_MAN.length; // next symbol offset from t0
+
+        // ── READING: accumulate payload ──────────────────────────────────
+        while (rxLoopActive) {
+          const symStart = t0 + symIndex * HALF_BIT_MS;
+
+          // If we've drifted too far into the past, nudge t0 forward
+          const lag = performance.now() - symStart;
+          if (lag > MAX_PHASE_DRIFT_MS) {
+            const drift = lag - MAX_PHASE_DRIFT_MS;
+            t0 += drift;
           }
 
-        } else if (rxState === "READING") {
+          const brightness = await sampleAtCentre(t0 + symIndex * HALF_BIT_MS);
+          if (!rxLoopActive) break;
+
+          const sym = brightness > threshHi ? "1" : (brightness < threshLo ? "0" : lastLevel);
+          lastLevel = sym;
+          symIndex++;
+
           rxSymbolBuffer.push(sym);
           safeText(statBitsEl, String(rxSymbolBuffer.length));
           updateBitBufferUI(rxSymbolBuffer, "data");
 
-          // Check tail for postamble
-          if (rxSymbolBuffer.length >= POSTAMBLE_MAN.length) {
-            const tail = rxSymbolBuffer.slice(-POSTAMBLE_MAN.length).join("");
-            if (tail === POSTAMBLE_MAN) {
-              const payload = rxSymbolBuffer.slice(0, rxSymbolBuffer.length - POSTAMBLE_MAN.length);
-              log("rx-log", `Postamble detected. Payload: ${payload.length} symbols`, "ok");
+          graphData.push(brightness);
+          if (graphData.length > GRAPH_HISTORY) graphData.shift();
+          safeText(statCurrent, String(Math.round(brightness)));
+          drawGraph();
+
+          // Check tail for postamble match (Part A alternating pattern)
+          if (rxSymbolBuffer.length >= POSTAMBLE_MATCH.length) {
+            const tail = rxSymbolBuffer.slice(-POSTAMBLE_MATCH.length).join("");
+            if (tail === POSTAMBLE_MATCH) {
+              const payload = rxSymbolBuffer.slice(0, rxSymbolBuffer.length - POSTAMBLE_MATCH.length);
+              log("rx-log", `Postamble detected ✓  Payload: ${payload.length} symbols`, "ok");
               decodeAndVerify(payload);
 
               setRxState("DONE");
-              // Reset after 2s and go back to scanning
+              reticleBox?.classList.remove("locked");
               await sleep(2000);
               if (!rxLoopActive) break;
+
               rxSymbolBuffer = [];
               preambleWindow = [];
-              reticleBox?.classList.remove("locked");
               setRxState("SCANNING");
               log("rx-log", "Scanning for next message...", "info");
+              break; // break inner READING loop → outer loop back to edge hunt
             }
+          }
+
+          // Safety: if we've collected way more symbols than any reasonable
+          // message could produce (128 chars × 2 × 8 bits × 2 syms + overhead = ~4200),
+          // abort and re-scan. Prevents infinite accumulation on noise.
+          if (rxSymbolBuffer.length > 4500) {
+            log("rx-log", "Buffer overflow — no postamble found, re-scanning", "err");
+            rxSymbolBuffer = [];
+            setRxState("SCANNING");
+            break;
           }
         }
       }
-    }
-
-    // ── Brightness animation loop (separate from rx for smooth graph even before rx starts) ──
-    function startBrightnessLoop() {
-      rxLoopActive = true;
-      const loop = () => {
-        if (!rxLoopActive) return;
-        // Graph is updated inside rxMainLoop; this loop only needed if not running rx
-        rxAnimFrame = requestAnimationFrame(loop);
-      };
-      loop();
     }
 
     async function runCalibration() {
@@ -1321,7 +1431,6 @@ textarea::placeholder { color: var(--text-dim); }
 
     function stopReceiver() {
       rxLoopActive = false;
-      cancelAnimationFrame(rxAnimFrame);
       if (rxStream) { rxStream.getTracks().forEach(t => t.stop()); rxStream = null; }
       if (rxVideo) rxVideo.srcObject = null;
       rxSymbolBuffer = []; preambleWindow = [];
