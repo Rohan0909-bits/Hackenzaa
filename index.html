@@ -131,23 +131,30 @@ canvas{width:100%;display:block;border-radius:5px;border:1px solid var(--border)
       <div class="ct">Settings</div>
       <div class="r2">
         <div><lbl>Tb (ms/bit) — must match sender</lbl><input type="number" id="rTb" value="250" min="100" max="2000" step="10"></div>
-        <div><lbl>ROI %</lbl><input type="number" id="rROI" value="40" min="10" max="100"></div>
+        <div><lbl>Box Size (%)</lbl><input type="number" id="rROI" value="35" min="10" max="80"><div class="note">Size of capture box</div></div>
       </div>
-      <div class="note" style="margin-top:6px">⚠ Both phones <b>must</b> use the same Tb value.</div>
+      <div class="note" style="margin-top:6px">⚠ Both phones <b>must</b> use the same Tb value. Aim the box at the sender light.</div>
     </div>
 
     <div class="card">
-      <div class="ct">Camera</div>
-      <video id="vid" autoplay muted playsinline></video>
-      <canvas id="gc" height="80"></canvas>
-      <div class="lrow" style="margin-top:7px">
-        <span class="llb">LUMA</span>
-        <div class="lbw"><div class="lbf" id="lBar" style="background:linear-gradient(90deg,#003f5c,var(--accent))"></div></div>
-        <span class="lv" id="lVal">–</span>
+      <div class="ct">Camera — aim box at sender light</div>
+      <!-- Single overlay canvas: draws video + targeting box + luma bar -->
+      <div style="position:relative;border-radius:6px;overflow:hidden;background:#000;border:1px solid var(--border)">
+        <video id="vid" autoplay muted playsinline style="display:none"></video>
+        <canvas id="vc" style="width:100%;display:block;border-radius:6px"></canvas>
+        <!-- Live luma bar inside the viewfinder -->
+        <div id="lumaHud" style="position:absolute;bottom:8px;left:8px;right:8px;height:8px;border-radius:4px;background:rgba(0,0,0,.5);overflow:hidden">
+          <div id="lBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--green));transition:width .07s"></div>
+        </div>
+        <!-- State label inside viewfinder -->
+        <div id="vcState" style="position:absolute;top:7px;left:8px;font-family:'Orbitron',monospace;font-size:.6rem;color:var(--pre);letter-spacing:.1em;text-shadow:0 0 8px #000;display:none">LOCKED</div>
       </div>
-      <div style="font-size:.6rem;color:var(--muted);margin-top:3px">
-        Min:<span id="lMin" style="color:var(--accent)">–</span>
-        Max:<span id="lMax" style="color:var(--accent)">–</span>
+      <!-- Signal graph below -->
+      <canvas id="gc" height="70" style="margin-top:6px"></canvas>
+      <div style="font-size:.6rem;color:var(--muted);margin-top:4px;line-height:1.8">
+        Luma:<span id="lVal" style="color:var(--accent)">–</span> &nbsp;
+        Min:<span id="lMin" style="color:var(--muted)">–</span>
+        Max:<span id="lMax" style="color:var(--muted)">–</span>
         Thresh:<span id="lTh" style="color:var(--pre)">–</span>
         Samp/bit:<span id="lSpb" style="color:var(--green)">–</span>
       </div>
@@ -213,6 +220,7 @@ canvas{width:100%;display:block;border-radius:5px;border:1px solid var(--border)
 
 const PRE  = '1010101011001100';   // 16-bit preamble
 const POST = '0011001101010101';   // 16-bit postamble
+const START= '11111111';           // 8-bit start-of-data marker (0xFF), placed after gap zeros
 const PRE_LEN  = PRE.length;
 const POST_LEN = POST.length;
 
@@ -255,7 +263,7 @@ function getPayBits(){
 function buildPkt(){
   const pay = getPayBits();
   const gap = '0'.repeat(Math.max(4,parseInt(document.getElementById('sGap').value)||8));
-  return PRE + gap + pay + POST;
+  return PRE + gap + START + pay + POST;
 }
 
 function updatePrev(){
@@ -264,7 +272,7 @@ function updatePrev(){
   const pkt = PRE + gap + pay + POST;
   const cc=(s,c)=>s.split('').map(b=>`<span class="${c}">${b}</span>`).join('');
   document.getElementById('sPrev').innerHTML =
-    cc(PRE,'bpx') + cc(gap,'b0') +
+    cc(PRE,'bpx') + cc(gap,'b0') + cc(START,'bpx') +
     pay.split('').map(b=>`<span class="b${b}">${b}</span>`).join('') +
     cc(POST,'bex');
   const isT=document.getElementById('sMode').value==='text';
@@ -440,44 +448,119 @@ const hideBanner=()=>document.getElementById('preBanner').classList.remove('on')
 
 // ── MAIN LOOP ─────────────────────────────────────────────────────────
 function rxLoop(){
-  const vid=document.getElementById('vid');
-  const off=document.createElement('canvas');
-  off.width=vid.videoWidth||320; off.height=vid.videoHeight||240;
-  const ctx=off.getContext('2d',{willReadFrequently:true});
+  const vid = document.getElementById('vid');
+  const vc  = document.getElementById('vc');   // overlay viewfinder canvas
+
+  // Off-screen canvas for full pixel capture
+  const off = document.createElement('canvas');
+  // Size both canvases once video metadata is ready
+  off.width  = vid.videoWidth  || 320;
+  off.height = vid.videoHeight || 240;
+  vc.width   = off.width;
+  vc.height  = off.height;
+
+  const octx = off.getContext('2d', {willReadFrequently:true});
+  const vctx = vc.getContext('2d');
 
   function frame(ts){
     if(!rxOn) return;
     rxAF=requestAnimationFrame(frame);
     rxFrameN++;
 
-    // 1. Compute ROI luma for this frame
-    ctx.drawImage(vid,0,0,off.width,off.height);
-    const rp=parseInt(document.getElementById('rROI').value)/100;
-    const rW=Math.floor(off.width*rp), rH=Math.floor(off.height*rp);
-    const rX=Math.floor((off.width-rW)/2), rY=Math.floor((off.height-rH)/2);
-    const px=ctx.getImageData(rX,rY,rW,rH).data;
+    const W=off.width, H=off.height;
+
+    // 1. Draw video to off-screen canvas
+    octx.drawImage(vid, 0, 0, W, H);
+
+    // 2. Compute ROI box (centred square)
+    const rp  = parseInt(document.getElementById('rROI').value)/100;
+    const rW  = Math.floor(W * rp);
+    const rH  = Math.floor(H * rp);
+    const rX  = Math.floor((W - rW) / 2);
+    const rY  = Math.floor((H - rH) / 2);
+
+    // 3. Compute luma ONLY inside the box
+    const px  = octx.getImageData(rX, rY, rW, rH).data;
     let s=0; const n=px.length>>2;
     for(let i=0;i<px.length;i+=4) s+=((77*px[i]+150*px[i+1]+29*px[i+2])>>8);
     const luma=s/n;
 
-    // 2. Push into ring buffer
+    // 4. Draw viewfinder: video frame + targeting box overlay
+    vctx.drawImage(off, 0, 0, W, H);
+
+    // Dim area outside box (subtle darkening)
+    vctx.fillStyle = 'rgba(0,0,0,0.42)';
+    // Top strip
+    vctx.fillRect(0, 0, W, rY);
+    // Bottom strip
+    vctx.fillRect(0, rY+rH, W, H-(rY+rH));
+    // Left strip
+    vctx.fillRect(0, rY, rX, rH);
+    // Right strip
+    vctx.fillRect(rX+rW, rY, W-(rX+rW), rH);
+
+    // Box border — colour reflects state
+    const locked = rxState==='COLLECT';
+    const boxColor = locked ? '#00ff9d' : '#ffe066';
+    const boxGlow  = locked ? 'rgba(0,255,157,0.55)' : 'rgba(255,224,102,0.45)';
+
+    // Glow shadow
+    vctx.shadowColor = boxGlow;
+    vctx.shadowBlur  = 12;
+    vctx.strokeStyle = boxColor;
+    vctx.lineWidth   = 2;
+    vctx.strokeRect(rX+1, rY+1, rW-2, rH-2);
+    vctx.shadowBlur  = 0;
+
+    // Corner brackets
+    const cs = Math.min(20, Math.floor(rW*0.12));
+    const corners = [[rX,rY],[rX+rW,rY],[rX+rW,rY+rH],[rX,rY+rH]];
+    const dirs     = [[1,1],[-1,1],[-1,-1],[1,-1]];
+    vctx.strokeStyle = boxColor; vctx.lineWidth = 3;
+    corners.forEach(([cx,cy],i)=>{
+      const [dx,dy]=dirs[i];
+      vctx.beginPath();
+      vctx.moveTo(cx+dx*cs, cy);
+      vctx.lineTo(cx, cy);
+      vctx.lineTo(cx, cy+dy*cs);
+      vctx.stroke();
+    });
+
+    // Crosshair at centre
+    const mx=rX+rW/2, my=rY+rH/2, ch=8;
+    vctx.strokeStyle=boxColor; vctx.lineWidth=1.5;
+    vctx.beginPath();
+    vctx.moveTo(mx-ch,my); vctx.lineTo(mx+ch,my);
+    vctx.moveTo(mx,my-ch); vctx.lineTo(mx,my+ch);
+    vctx.stroke();
+
+    // Label inside box
+    vctx.fillStyle=boxColor;
+    vctx.font=`bold 9px 'Share Tech Mono', monospace`;
+    vctx.textAlign='center';
+    vctx.fillText(locked ? '● LOCKED' : '○ HUNTING', mx, rY+rH-6);
+    vctx.textAlign='left';
+
+    // Show/hide locked overlay state label
+    const vcStateEl=document.getElementById('vcState');
+    if(locked){ vcStateEl.style.display='block'; vcStateEl.textContent='⚡ LOCKED'; }
+    else { vcStateEl.style.display='none'; }
+
+    // 5. Push into ring buffer (timestamped)
     ring.push({t:ts, v:luma});
     if(ring.length>RING_MAX) ring.shift();
 
-    // 3. Update min/max with true observed range (no EMA distortion)
+    // 6. Update min/max — true running extremes with very slow decay
     if(luma<ringMin) ringMin=luma;
     if(luma>ringMax) ringMax=luma;
-    // Very slow decay toward center so old extremes don't permanently dominate
     ringMin = ringMin*0.9998 + luma*0.0002;
     ringMax = ringMax*0.9998 + luma*0.0002;
     ringMin=Math.max(0,ringMin); ringMax=Math.min(255,ringMax);
-    const span=ringMax-ringMin;
-    if(span<8){ ringMax=ringMin+8; } // minimum contrast headroom
+    if(ringMax-ringMin<8) ringMax=ringMin+8;
 
-    // Threshold is always midpoint of observed range
     const threshold=(ringMin+ringMax)/2;
 
-    // 4. UI (throttled)
+    // 7. UI updates (throttled every 4 frames)
     if(rxFrameN%4===0){
       document.getElementById('lBar').style.width=(luma/255*100)+'%';
       document.getElementById('lVal').textContent=luma.toFixed(0);
@@ -489,15 +572,7 @@ function rxLoop(){
     const Tb=Math.max(100,parseInt(document.getElementById('rTb').value)||250);
 
     // ─────────────────────────────────────────────────────────────────
-    // 5. Process bit windows
-    //
-    // KEY INSIGHT: Instead of trying to lock a clock in real-time, we
-    // keep a running hunt clock. On each Tb tick we:
-    //   a) Average all ring samples in [huntClock, huntClock+Tb)
-    //   b) Threshold → 1 bit
-    //   c) Push to huntBits, search for preamble
-    //   d) On preamble match → switch to COLLECT, keep counting from there
-    // ─────────────────────────────────────────────────────────────────
+    // 8. Process bit windows via ring buffer time-range averaging
     if(rxState==='HUNT'){
       if(huntClock===0) huntClock=ts;
       // Fire for every Tb window that has completely elapsed
@@ -512,11 +587,6 @@ function rxLoop(){
 
         const avg=winSamples.reduce((a,s)=>a+s.v,0)/winSamples.length;
         const bit=avg>threshold?1:0;
-
-        document.getElementById('bitLBar')?.remove(); // not used
-        if(rxFrameN%4===0){
-          document.getElementById('lBar').style.width=(avg/255*100)+'%';
-        }
 
         dispBits.push(bit);
         if(dispBits.length>80) dispBits.shift();
@@ -612,55 +682,49 @@ function rxLoop(){
 
 // ── DECODE ───────────────────────────────────────────────────────────
 function tryDecode(){
-  if(payBits.length < POST_LEN + 8) return;
+  if(payBits.length < START.length + POST_LEN + 8) return;
   const ps = payBits.join('');
 
-  // Find postamble with up to 3 bit error tolerance
-  let bestIdx=-1, bestErr=99;
-  for(let i=8; i+POST_LEN<=ps.length; i++){
-    const e=hamming(ps.slice(i,i+POST_LEN),POST);
-    if(e<bestErr){ bestErr=e; bestIdx=i; }
+  // Step 1: Find START marker (0xFF = 11111111) — marks exact start of payload
+  // Allow up to 1 bit error in START marker
+  let startIdx = -1;
+  for(let i=0; i+START.length<=ps.length; i++){
+    if(hamming(ps.slice(i,i+START.length), START) <= 1){ startIdx=i; break; }
   }
-  if(bestErr>3) return;  // no good postamble found yet
+  if(startIdx < 0) return; // START not found yet
 
-  // Extract payload: everything before postamble
-  const raw = ps.slice(0, bestIdx);
+  const afterStart = ps.slice(startIdx + START.length);
+  if(afterStart.length < POST_LEN + 8) return; // not enough data yet
 
-  // Strip leading gap zeros (the N gap bits from sender)
-  // We strip AT MOST (gap configured) zeros from the front
-  // Default gap = 8, max = 32
-  const maxGap = 32;
-  let start = 0;
-  while(start < Math.min(maxGap, raw.length) && raw[start]==='0') start++;
+  // Step 2: Find POSTAMBLE with up to 3 bit error tolerance
+  let postIdx=-1, postErr=99;
+  for(let i=8; i+POST_LEN<=afterStart.length; i++){
+    const e=hamming(afterStart.slice(i,i+POST_LEN), POST);
+    if(e<postErr){ postErr=e; postIdx=i; }
+  }
+  if(postErr>3) return; // no good postamble found yet
 
-  const payload = raw.slice(start);
+  // Step 3: payload is between START and POST
+  const payload = afterStart.slice(0, postIdx);
   if(payload.length < 8){
-    rlog(`Payload too short (${payload.length} bits) after gap strip (stripped ${start})`, 'warn');
-    return;
+    rlog(`Payload too short: ${payload.length} bits`,'warn'); return;
   }
 
-  // Decode
+  // Decode text
   const txt = b2t(payload);
-  // Check if meaningful text (more than half printable non-'?')
-  const printable = txt.replace(/\?/g,'').length;
-  const isText = printable > txt.length * 0.5;
+  const printable = [...txt].filter(c=>c!=='?').length;
+  const isText = printable >= txt.length * 0.5;
 
   rxPktN++;
   document.getElementById('rPkts').textContent=rxPktN;
-
-  rlog(`✓ PKT #${rxPktN}: "${isText?txt:'[binary]'}" (${payload.length} bits, postamble err=${bestErr})`, 'ok');
+  rlog(`✓ PKT #${rxPktN}: "${isText?txt:'[binary]'}" (${payload.length} bits, post-err=${postErr})`,'ok');
 
   document.getElementById('rResult').innerHTML=`
     <div class="result">
-      <div class="rl">✓ DECODED MESSAGE — PKT #${rxPktN}</div>
+      <div class="rl">✓ DECODED — PKT #${rxPktN}</div>
       ${isText ? `<div class="rt">${esc(txt)}</div>` : ''}
       <div class="rb">${payload}</div>
-      <div class="rm">
-        Bits: ${payload.length} &nbsp;|&nbsp;
-        Bytes: ${Math.floor(payload.length/8)} &nbsp;|&nbsp;
-        Gap stripped: ${start} &nbsp;|&nbsp;
-        Post-err: ${bestErr}
-      </div>
+      <div class="rm">Bits: ${payload.length} &nbsp;|&nbsp; Bytes: ${Math.floor(payload.length/8)} &nbsp;|&nbsp; Post-err: ${postErr}</div>
     </div>`;
 
   backToHunt();
