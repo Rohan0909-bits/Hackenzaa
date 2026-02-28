@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>U-Flash · Underwater Optical Comm</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #020c14;
+    --surface: #041824;
+    --card: #071f2e;
+    --border: #0e4a6e;
+    --accent: #00d4ff;
+    --accent2: #00ff9d;
+    --warn: #ff6b35;
+    --text: #c8e8f8;
+    --muted: #4a7a99;
+    --glow: 0 0 20px rgba(0,212,255,0.3);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* animated background */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse at 20% 80%, rgba(0,100,160,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(0,212,255,0.07) 0%, transparent 50%);
+    animation: bgPulse 8s ease-in-out infinite alternate;
+    pointer-events: none;
+  }
+  @keyframes bgPulse {
+    from { opacity: 0.6; }
+    to { opacity: 1; }
+  }
+
+  /* floating particles */
+  .particles {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+  }
+  .particle {
+    position: absolute;
+    width: 2px; height: 2px;
+    background: var(--accent);
+    border-radius: 50%;
+    opacity: 0;
+    animation: float linear infinite;
+  }
+  @keyframes float {
+    0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+    10% { opacity: 0.6; }
+    90% { opacity: 0.3; }
+    100% { transform: translateY(-10vh) translateX(var(--dx,20px)); opacity: 0; }
+  }
+
+  .app {
+    position: relative; z-index: 1;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 16px;
+    min-height: 100vh;
+  }
+
+  header {
+    text-align: center;
+    padding: 20px 0 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+  header h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: var(--accent);
+    text-shadow: var(--glow);
+    letter-spacing: 0.05em;
+  }
+  header p {
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 4px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  /* mode selector */
+  .mode-tabs {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .mode-tab {
+    flex: 1;
+    padding: 12px;
+    background: var(--card);
+    border: none;
+    color: var(--muted);
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  .mode-tab.active {
+    background: var(--accent);
+    color: var(--bg);
+    text-shadow: none;
+  }
+  .mode-tab:not(.active):hover { background: var(--surface); color: var(--text); }
+
+  /* panels */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* cards */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 14px;
+    position: relative;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.5;
+  }
+  .card-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.65rem;
+    color: var(--accent);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  label {
+    display: block;
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    margin-top: 10px;
+  }
+  label:first-of-type { margin-top: 0; }
+
+  input[type="text"], input[type="number"], textarea, select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--accent2);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.9rem;
+    padding: 8px 10px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--accent); box-shadow: var(--glow); }
+  textarea { resize: vertical; min-height: 60px; }
+
+  .row2 { display: flex; gap: 10px; }
+  .row2 > * { flex: 1; }
+
+  /* buttons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 10px 16px;
+    border: none; border-radius: 5px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.08em;
+    width: 100%;
+    margin-top: 6px;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .btn-primary:hover:not(:disabled) { background: #33ddff; box-shadow: var(--glow); }
+  .btn-success {
+    background: var(--accent2);
+    color: var(--bg);
+  }
+  .btn-success:hover:not(:disabled) { background: #33ffb8; }
+  .btn-warn {
+    background: var(--warn);
+    color: #fff;
+  }
+  .btn-warn:hover:not(:disabled) { background: #ff8555; }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .btn-outline:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-row { display: flex; gap: 8px; }
+  .btn-row .btn { flex: 1; }
+
+  /* status badge */
+  .status-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    padding: 3px 8px;
+    border-radius: 3px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .status-idle { background: rgba(74,122,153,0.2); color: var(--muted); border: 1px solid var(--border); }
+  .status-sending { background: rgba(255,107,53,0.2); color: var(--warn); border: 1px solid var(--warn); animation: blink 0.5s step-end infinite; }
+  .status-ok { background: rgba(0,255,157,0.15); color: var(--accent2); border: 1px solid var(--accent2); }
+  .status-active { background: rgba(0,212,255,0.15); color: var(--accent); border: 1px solid var(--accent); }
+  @keyframes blink { 50% { opacity: 0.4; } }
+
+  /* progress bar */
+  .progress-wrap {
+    height: 6px;
+    background: var(--bg);
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    margin: 8px 0;
+  }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 3px;
+    width: 0%;
+    transition: width 0.1s;
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  /* camera / video */
+  #videoEl {
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: #000;
+    display: block;
+    max-height: 200px;
+    object-fit: cover;
+  }
+  #debugCanvas {
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: #000;
+    display: block;
+    margin-top: 8px;
+    height: 80px;
+  }
+
+  /* luma meter */
+  .luma-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 8px 0;
+  }
+  .luma-label { font-size: 0.65rem; color: var(--muted); white-space: nowrap; }
+  .luma-bar-wrap {
+    flex: 1;
+    height: 14px;
+    background: var(--bg);
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .luma-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #003f5c, var(--accent));
+    width: 0%;
+    transition: width 0.08s;
+  }
+  .luma-val { font-size: 0.75rem; color: var(--accent2); min-width: 36px; text-align: right; }
+
+  /* decoded bits display */
+  .bit-display {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    word-break: break-all;
+    color: var(--muted);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 10px;
+    min-height: 40px;
+    line-height: 1.6;
+  }
+  .bit-1 { color: var(--accent2); }
+  .bit-0 { color: var(--muted); }
+  .bit-pre { color: var(--accent); font-weight: 800; text-shadow: 0 0 10px rgba(0,212,255,0.25); }
+
+  /* result box */
+  .result-box {
+    background: rgba(0,255,157,0.05);
+    border: 1px solid var(--accent2);
+    border-radius: 6px;
+    padding: 12px;
+    margin-top: 10px;
+  }
+  .result-box .result-label {
+    font-size: 0.6rem;
+    color: var(--accent2);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .result-box .result-payload {
+    font-size: 1rem;
+    color: var(--accent2);
+    word-break: break-all;
+    letter-spacing: 0.1em;
+  }
+
+  /* log */
+  .log {
+    font-size: 0.65rem;
+    color: var(--muted);
+    max-height: 80px;
+    overflow-y: auto;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 8px;
+    line-height: 1.7;
+  }
+  .log .le { color: var(--warn); }
+  .log .ls { color: var(--accent); }
+
+  /* flash overlay */
+  #flashOverlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 9999;
+    background: white;
+  }
+
+  /* tooltip / helper */
+  .helper {
+    font-size: 0.62rem;
+    color: var(--muted);
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+
+  /* section divider */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 12px 0;
+    opacity: 0.5;
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- Particles -->
+<div class="particles" id="particles"></div>
+
+<!-- Flash overlay for screen-flash fallback -->
+<div id="flashOverlay"></div>
+
+<div class="app">
+  <header>
+    <h1>U-FLASH</h1>
+    <p>Underwater Optical Communication · Sprint-1</p>
+  </header>
+
+  <!-- Mode Tabs -->
+  <div class="mode-tabs">
+    <button class="mode-tab active" id="tabSender" onclick="setMode('sender')">⚡ Sender</button>
+    <button class="mode-tab" id="tabReceiver" onclick="setMode('receiver')">📡 Receiver</button>
+  </div>
+
+  <!-- ==================== SENDER PANEL ==================== -->
+  <div class="panel active" id="senderPanel">
+
+    <div class="card">
+      <div class="card-title">Transmission Config</div>
+
+      <label>Payload Bits</label>
+      <textarea id="sPayload" placeholder="e.g. 1010110100101101">1010110100101101</textarea>
+      <div class="helper">Binary string (0/1). Sender will transmit PREAMBLE + payload + POSTAMBLE.</div>
+
+      <div class="row2" style="margin-top:10px;">
+        <div>
+          <label>Bit Duration Tb (ms)</label>
+          <input type="number" id="sTb" value="300" min="50" max="2000" step="10">
+        </div>
+        <div>
+          <label>Repetitions</label>
+          <input type="number" id="sRep" value="1" min="1" max="5">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Packet Preview</div>
+      <div class="bit-display" id="sPacketPreview">–</div>
+      <div class="helper" id="sPacketInfo">Configure payload above</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Transmitter</div>
+      <span class="status-badge status-idle" id="sStatus">IDLE</span>
+      <div class="progress-wrap"><div class="progress-bar" id="sProgress"></div></div>
+      <div id="sProgressLabel" style="font-size:0.65rem;color:var(--muted);margin-bottom:8px;">–</div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btnTorch" onclick="initTorch()">⚡ Enable Torch</button>
+      </div>
+      <div id="torchInfo" class="helper">Requires HTTPS + Android Chrome for torch. Otherwise uses screen flash.</div>
+
+      <div class="btn-row" style="margin-top:8px;">
+        <button class="btn btn-success" id="btnSend" onclick="sendPacket()" disabled>▶ Send Packet</button>
+        <button class="btn btn-warn" id="btnStop" onclick="stopSend()" disabled>■ Stop</button>
+      </div>
+
+      <div class="divider"></div>
+      <div class="log" id="sLog"><span class="ls">// sender log</span></div>
+    </div>
+  </div>
+
+  <!-- ==================== RECEIVER PANEL ==================== -->
+  <div class="panel" id="receiverPanel">
+
+    <div class="card">
+      <div class="card-title">Decode Config</div>
+      <div class="row2">
+        <div>
+          <label>Payload Length (bits)</label>
+          <input type="number" id="rPayLen" value="16" min="1" max="256">
+        </div>
+        <div>
+          <label>Bit Duration Tb (ms)</label>
+          <input type="number" id="rTb" value="300" min="50" max="2000" step="10">
+        </div>
+      </div>
+      <div class="row2" style="margin-top:10px;">
+        <div>
+          <label>ROI Size (%)</label>
+          <input type="number" id="rROI" value="40" min="10" max="100">
+        </div>
+        <div>
+          <label>Threshold Mode</label>
+          <select id="rThreshMode">
+            <option value="adaptive" selected>Adaptive (recent min/max)</option>
+            <option value="midpoint">Fixed 128</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Camera Preview + Intensity Graph</div>
+      <video id="videoEl" autoplay muted playsinline></video>
+      <canvas id="debugCanvas" width="400" height="80"></canvas>
+
+      <div class="luma-display" style="margin-top:8px;">
+        <span class="luma-label">LUMA</span>
+        <div class="luma-bar-wrap"><div class="luma-bar" id="lumaBar"></div></div>
+        <span class="luma-val" id="lumaVal">–</span>
+      </div>
+      <div class="luma-display">
+        <span class="luma-label">BIT·AVG</span>
+        <div class="luma-bar-wrap"><div class="luma-bar" id="bitLumaBar" style="background:linear-gradient(90deg,#003f5c,var(--accent2))"></div></div>
+        <span class="luma-val" id="bitLumaVal">–</span>
+      </div>
+
+      <div style="font-size:0.65rem;color:var(--muted);margin-top:4px;line-height:1.6;">
+        Thresh: <span id="threshVal" style="color:var(--accent)">–</span> &nbsp;|&nbsp;
+        Min: <span id="minVal" style="color:var(--muted)">–</span> &nbsp;|&nbsp;
+        Max: <span id="maxVal" style="color:var(--muted)">–</span><br/>
+        Preamble: <span id="rPreStatus" style="color:var(--warn)">NO</span>
+        <span id="rPreIdx" style="color:var(--muted)">( - )</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Receiver Control</div>
+      <span class="status-badge status-idle" id="rStatus">IDLE</span>
+      <div class="btn-row" style="margin-top:8px;">
+        <button class="btn btn-primary" id="btnStartRx" onclick="startReceiver()">📷 Start Camera</button>
+        <button class="btn btn-warn" id="btnStopRx" onclick="stopReceiver()" disabled>■ Stop</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Decoded Bits (last 64)</div>
+      <div class="bit-display" id="rBitDisplay">–</div>
+      <div style="font-size:0.65rem;color:var(--muted);margin-top:6px;">
+        Buffered: <span id="rBufCount" style="color:var(--accent)">0</span> bits &nbsp;|&nbsp;
+        Packets found: <span id="rPktCount" style="color:var(--accent2)">0</span>
+      </div>
+    </div>
+
+    <div id="rResultArea"></div>
+
+    <div class="card">
+      <div class="card-title">Receiver Log</div>
+      <div class="log" id="rLog"><span class="ls">// receiver log</span></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// =====================================================================
+// PARTICLES
+// =====================================================================
+(function(){
+  const c = document.getElementById('particles');
+  for(let i=0;i<25;i++){
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.cssText = `
+      left:${Math.random()*100}%;
+      width:${1+Math.random()*2}px;
+      height:${1+Math.random()*2}px;
+      --dx:${(Math.random()-0.5)*60}px;
+      animation-duration:${6+Math.random()*10}s;
+      animation-delay:${Math.random()*8}s;
+      opacity:0;
+    `;
+    c.appendChild(p);
+  }
+})();
+
+// =====================================================================
+// GLOBALS
+// =====================================================================
+let torchStream = null;
+let torchTrack = null;
+let torchSupported = false;
+let sendInterval = null;
+let isSending = false;
+
+let rxStream = null;
+let rxTrack = null;
+let rxAnimFrame = null;
+let rxRunning = false;
+
+const PREAMBLE = '10101010';
+const POSTAMBLE = '00000000';
+
+// =====================================================================
+// MODE SWITCHING
+// =====================================================================
+function setMode(mode) {
+  document.getElementById('tabSender').classList.toggle('active', mode==='sender');
+  document.getElementById('tabReceiver').classList.toggle('active', mode==='receiver');
+  document.getElementById('senderPanel').classList.toggle('active', mode==='sender');
+  document.getElementById('receiverPanel').classList.toggle('active', mode==='receiver');
+  updatePacketPreview();
+}
+
+// =====================================================================
+// PACKET PREVIEW
+// =====================================================================
+function buildPacket() {
+  const raw = document.getElementById('sPayload').value.replace(/[^01]/g,'');
+  const payload = raw || '0'.repeat(16);
+  const packet = PREAMBLE + payload + POSTAMBLE;
+  return { packet, payload };
+}
+
+function updatePacketPreview() {
+  const {packet, payload} = buildPacket();
+  const el = document.getElementById('sPacketPreview');
+  let html = '';
+  for(let i=0;i<PREAMBLE.length;i++) html += `<span class="bit-pre">${PREAMBLE[i]}</span>`;
+  for(let i=0;i<payload.length;i++) html += `<span class="bit-${payload[i]}">${payload[i]}</span>`;
+  for(let i=0;i<POSTAMBLE.length;i++) html += `<span style="color:var(--warn)">${POSTAMBLE[i]}</span>`;
+  el.innerHTML = html;
+  document.getElementById('sPacketInfo').textContent =
+    `Total: ${packet.length} bits | Preamble: ${PREAMBLE.length} | Payload: ${payload.length} | Postamble: ${POSTAMBLE.length}`;
+}
+document.getElementById('sPayload').addEventListener('input', updatePacketPreview);
+updatePacketPreview();
+
+// =====================================================================
+// SENDER - TORCH INIT
+// =====================================================================
+async function initTorch() {
+  const btn = document.getElementById('btnTorch');
+  btn.disabled = true;
+  sLog('Requesting camera for torch...');
+  try {
+    torchStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment' }
+    });
+    torchTrack = torchStream.getVideoTracks()[0];
+    const caps = torchTrack.getCapabilities ? torchTrack.getCapabilities() : {};
+    if (caps.torch) {
+      torchSupported = true;
+      sLog('✓ Torch supported!', 'ok');
+      document.getElementById('torchInfo').textContent = '✓ Torch API ready. Using hardware flashlight.';
+      document.getElementById('torchInfo').style.color = 'var(--accent2)';
+    } else {
+      torchSupported = false;
+      sLog('Torch not available — using screen flash fallback', 'warn');
+      document.getElementById('torchInfo').textContent = '⚠ No torch API. Using fullscreen screen flash fallback.';
+    }
+    document.getElementById('btnSend').disabled = false;
+    setSenderStatus('ok', torchSupported ? 'TORCH READY' : 'SCREEN READY');
+  } catch(e) {
+    sLog('Camera denied: ' + e.message, 'err');
+    torchSupported = false;
+    document.getElementById('torchInfo').textContent = '⚠ Camera denied. Using screen flash fallback.';
+    document.getElementById('btnSend').disabled = false;
+    setSenderStatus('ok', 'SCREEN READY');
+  }
+  btn.disabled = false;
+}
+
+// =====================================================================
+// SENDER - SET BIT (torch or screen)
+// =====================================================================
+async function setBit(value) {
+  if (torchSupported && torchTrack) {
+    try {
+      await torchTrack.applyConstraints({ advanced: [{ torch: value === 1 }] });
+    } catch(e) {
+      // ignore and fallback to screen
+      const overlay = document.getElementById('flashOverlay');
+      overlay.style.display = value === 1 ? 'block' : 'none';
+      overlay.style.background = value === 1 ? 'white' : 'black';
+    }
+  } else {
+    const overlay = document.getElementById('flashOverlay');
+    overlay.style.display = value === 1 ? 'block' : 'none';
+    overlay.style.background = value === 1 ? 'white' : 'black';
+  }
+}
+
+// =====================================================================
+// SENDER - SEND PACKET
+// =====================================================================
+async function sendPacket() {
+  if (isSending) return;
+  const Tb = parseInt(document.getElementById('sTb').value) || 300;
+  const reps = parseInt(document.getElementById('sRep').value) || 1;
+  const {packet} = buildPacket();
+  const fullSeq = Array.from({length: reps}, () => packet).join('');
+
+  isSending = true;
+  document.getElementById('btnSend').disabled = true;
+  document.getElementById('btnStop').disabled = false;
+  setSenderStatus('sending', 'TRANSMITTING');
+
+  sLog(`Sending ${fullSeq.length} bits @ Tb=${Tb}ms...`);
+
+  let idx = 0;
+  const overlay = document.getElementById('flashOverlay');
+  if (!torchSupported) { overlay.style.display = 'block'; overlay.style.background = 'black'; }
+
+  sendInterval = setInterval(async () => {
+    if (!isSending || idx >= fullSeq.length) {
+      clearInterval(sendInterval);
+      await setBit(0);
+      overlay.style.display = 'none';
+      isSending = false;
+      document.getElementById('btnSend').disabled = false;
+      document.getElementById('btnStop').disabled = true;
+      setSenderStatus('ok', 'DONE');
+      sLog('✓ Transmission complete.', 'ok');
+      setProgress(0);
+      document.getElementById('sProgressLabel').textContent = 'Done';
+      return;
+    }
+    const bit = parseInt(fullSeq[idx]);
+    await setBit(bit);
+    const pct = Math.round((idx / fullSeq.length) * 100);
+    setProgress(pct);
+    document.getElementById('sProgressLabel').textContent =
+      `Bit ${idx+1}/${fullSeq.length} = ${bit}`;
+    idx++;
+  }, Tb);
+}
+
+function stopSend() {
+  clearInterval(sendInterval);
+  setBit(0);
+  document.getElementById('flashOverlay').style.display = 'none';
+  isSending = false;
+  document.getElementById('btnSend').disabled = false;
+  document.getElementById('btnStop').disabled = true;
+  setSenderStatus('idle', 'IDLE');
+  setProgress(0);
+  sLog('Transmission stopped.');
+}
+
+function setProgress(pct) {
+  document.getElementById('sProgress').style.width = pct + '%';
+}
+
+function setSenderStatus(type, label) {
+  const el = document.getElementById('sStatus');
+  el.textContent = label;
+  el.className = 'status-badge status-' + type;
+}
+
+function sLog(msg, type) {
+  const log = document.getElementById('sLog');
+  const line = document.createElement('div');
+  if(type==='ok') line.className='ls';
+  else if(type==='err'||type==='warn') line.className='le';
+  line.textContent = '> ' + msg;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+// =====================================================================
+// RECEIVER GLOBALS
+// =====================================================================
+let rxBitBuffer = [];
+let rxBitWindowSamples = [];
+let rxBitStartTime = 0;
+let rxTb = 300;
+let rxPayLen = 16;
+let rxPacketCount = 0;
+let rxGraphData = []; // {luma, bit, threshold}
+let lastPreambleIdx = -1;
+
+// =====================================================================
+// RECEIVER - START / STOP
+// =====================================================================
+async function startReceiver() {
+  rxTb = parseInt(document.getElementById('rTb').value) || 300;
+  rxPayLen = parseInt(document.getElementById('rPayLen').value) || 16;
+
+  document.getElementById('btnStartRx').disabled = true;
+  rLog('Requesting camera...');
+
+  try {
+    rxStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false
+    });
+
+    const video = document.getElementById('videoEl');
+    video.srcObject = rxStream;
+    rxTrack = rxStream.getVideoTracks()[0];
+
+    await new Promise(r => video.onloadedmetadata = r);
+    await video.play();
+
+    rxRunning = true;
+    rxBitBuffer = [];
+    rxBitWindowSamples = [];
+    rxBitStartTime = performance.now();
+    rxGraphData = [];
+    rxPacketCount = 0;
+    lastPreambleIdx = -1;
+
+    document.getElementById('rPktCount').textContent = '0';
+    document.getElementById('rBufCount').textContent = '0';
+    document.getElementById('rPreStatus').textContent = 'NO';
+    document.getElementById('rPreIdx').textContent = '( - )';
+    document.getElementById('rResultArea').innerHTML = '';
+
+    document.getElementById('btnStopRx').disabled = false;
+    setRxStatus('active', 'RECEIVING');
+    rLog('✓ Camera started. Listening for signal...', 'ok');
+
+    // Start optimized loop
+    rxLoopOptimized();
+  } catch(e) {
+    rLog('Camera error: ' + e.message, 'err');
+    document.getElementById('btnStartRx').disabled = false;
+  }
+}
+
+function stopReceiver() {
+  rxRunning = false;
+  if(rxAnimFrame) cancelAnimationFrame(rxAnimFrame);
+  if(rxStream) rxStream.getTracks().forEach(t=>t.stop());
+  rxStream = null;
+  document.getElementById('videoEl').srcObject = null;
+  document.getElementById('btnStartRx').disabled = false;
+  document.getElementById('btnStopRx').disabled = true;
+  setRxStatus('idle', 'IDLE');
+  rLog('Receiver stopped.');
+}
+
+function setRxStatus(type, label) {
+  const el = document.getElementById('rStatus');
+  el.textContent = label;
+  el.className = 'status-badge status-' + type;
+}
+
+// =====================================================================
+// OPTIMIZED RECEIVER LOOP (downscale + stride sampling + stable threshold)
+// =====================================================================
+function rxLoopOptimized() {
+  if (!rxRunning) return;
+
+  const video = document.getElementById('videoEl');
+
+  // Offscreen processing canvas (downscaled)
+  const procCanvas = document.createElement('canvas');
+  procCanvas.width = 320;
+  procCanvas.height = 240;
+  const ctx = procCanvas.getContext('2d', { willReadFrequently: true });
+
+  let lastSampleT = 0;
+  const sampleIntervalMs = 33; // ~30 fps
+
+  function frame() {
+    if (!rxRunning) return;
+    rxAnimFrame = requestAnimationFrame(frame);
+
+    const nowT = performance.now();
+    if (nowT - lastSampleT < sampleIntervalMs) return;
+    lastSampleT = nowT;
+
+    if (!video.videoWidth || !video.videoHeight) return;
+
+    ctx.drawImage(video, 0, 0, procCanvas.width, procCanvas.height);
+
+    // ROI: center crop
+    const roiPct = parseInt(document.getElementById('rROI').value) / 100;
+    const roiW = Math.floor(procCanvas.width * roiPct);
+    const roiH = Math.floor(procCanvas.height * roiPct);
+    const roiX = Math.floor((procCanvas.width - roiW) / 2);
+    const roiY = Math.floor((procCanvas.height - roiH) / 2);
+
+    const imgData = ctx.getImageData(roiX, roiY, roiW, roiH);
+    const data = imgData.data;
+
+    // mean luma with stride
+    const step = 4;
+    let sum = 0;
+    let cnt = 0;
+    for (let y = 0; y < roiH; y += step) {
+      for (let x = 0; x < roiW; x += step) {
+        const i = (y * roiW + x) * 4;
+        sum += 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+        cnt++;
+      }
+    }
+    const luma = cnt ? (sum / cnt) : 0;
+
+    // UI: instant luma
+    document.getElementById('lumaBar').style.width = (luma / 255 * 100) + '%';
+    document.getElementById('lumaVal').textContent = luma.toFixed(0);
+
+    // accumulate within bit window
+    rxBitWindowSamples.push(luma);
+
+    if (nowT - rxBitStartTime >= rxTb) {
+      const avg = rxBitWindowSamples.reduce((a, b) => a + b, 0) / rxBitWindowSamples.length;
+      rxBitWindowSamples = [];
+      rxBitStartTime = nowT;
+
+      document.getElementById('bitLumaBar').style.width = (avg / 255 * 100) + '%';
+      document.getElementById('bitLumaVal').textContent = avg.toFixed(0);
+
+      // maintain recent averages for thresholding and graphing
+      rxGraphData.push({ luma: avg, bit: 0, threshold: 0 });
+      if (rxGraphData.length > 120) rxGraphData.shift();
+
+      const recent = rxGraphData.slice(-40).map(d => d.luma);
+      const mn = Math.min(...recent);
+      const mx = Math.max(...recent);
+      const contrast = mx - mn;
+
+      // threshold selection
+      let threshold;
+      const mode = document.getElementById('rThreshMode').value;
+      if (mode === 'adaptive') {
+        threshold = (mn + mx) / 2;
+        // if contrast too small, clamp to midpoint to avoid random toggling
+        if (contrast < 8) threshold = 128;
+      } else {
+        threshold = 128;
+      }
+
+      document.getElementById('minVal').textContent = mn.toFixed(0);
+      document.getElementById('maxVal').textContent = mx.toFixed(0);
+      document.getElementById('threshVal').textContent = threshold.toFixed(0);
+
+      const bit = avg > threshold ? 1 : 0;
+      rxBitBuffer.push(bit);
+
+      rxGraphData[rxGraphData.length - 1].bit = bit;
+      rxGraphData[rxGraphData.length - 1].threshold = threshold;
+
+      // render bits (with preamble highlight)
+      renderBitDisplayWithPreamble();
+
+      // update graph
+      drawDebugGraph();
+
+      // decode attempt (also updates preamble status)
+      tryDecodePacketWithPreambleStatus();
+
+      // trim buffer
+      const maxBuf = (PREAMBLE.length + rxPayLen + POSTAMBLE.length) * 4;
+      if (rxBitBuffer.length > maxBuf) rxBitBuffer.splice(0, rxBitBuffer.length - maxBuf);
+
+      document.getElementById('rBufCount').textContent = rxBitBuffer.length;
+    }
+  }
+
+  frame();
+}
+
+// =====================================================================
+// RENDER BIT DISPLAY (last 64) + highlight preamble region
+// =====================================================================
+function renderBitDisplayWithPreamble() {
+  const last64 = rxBitBuffer.slice(-64);
+  const el = document.getElementById('rBitDisplay');
+  if (last64.length === 0) { el.innerHTML = '–'; return; }
+
+  const s = last64.join('');
+  const localIdx = s.lastIndexOf(PREAMBLE);
+
+  el.innerHTML = last64.map((b, i) => {
+    const inPre = (localIdx >= 0 && i >= localIdx && i < localIdx + PREAMBLE.length);
+    const cls = inPre ? 'bit-pre' : `bit-${b}`;
+    return `<span class="${cls}">${b}</span>`;
+  }).join('');
+}
+
+// =====================================================================
+// DECODE + preamble indicator
+// =====================================================================
+function tryDecodePacketWithPreambleStatus() {
+  const buf = rxBitBuffer.join('');
+  const totalLen = PREAMBLE.length + rxPayLen + POSTAMBLE.length;
+
+  const preIdx = buf.lastIndexOf(PREAMBLE);
+  const preStatusEl = document.getElementById('rPreStatus');
+  const preIdxEl = document.getElementById('rPreIdx');
+
+  if (preIdx < 0) {
+    preStatusEl.textContent = 'NO';
+    preIdxEl.textContent = '( - )';
+    lastPreambleIdx = -1;
+    return;
+  }
+
+  preStatusEl.textContent = 'YES';
+  preIdxEl.textContent = `( ${preIdx} )`;
+
+  if (preIdx !== lastPreambleIdx) {
+    rLog(`Preamble detected @ index ${preIdx}`, 'warn');
+    lastPreambleIdx = preIdx;
+  }
+
+  const endIdx = preIdx + totalLen;
+  if (endIdx > buf.length) return;
+
+  const candidate = buf.slice(preIdx, endIdx);
+  const candidatePost = candidate.slice(PREAMBLE.length + rxPayLen);
+
+  // postamble check (allow up to 2 bit errors)
+  let postErrors = 0;
+  for(let i=0;i<POSTAMBLE.length;i++) if(candidatePost[i]!==POSTAMBLE[i]) postErrors++;
+  if(postErrors > 2) return;
+
+  const payload = candidate.slice(PREAMBLE.length, PREAMBLE.length + rxPayLen);
+
+  rxPacketCount++;
+  document.getElementById('rPktCount').textContent = rxPacketCount;
+  rLog(`✓ Packet #${rxPacketCount} decoded: ${payload}`, 'ok');
+
+  // show result
+  const resultArea = document.getElementById('rResultArea');
+  resultArea.innerHTML = `
+    <div class="result-box">
+      <div class="result-label">✓ Decoded Payload #${rxPacketCount}</div>
+      <div class="result-payload">${payload}</div>
+      <div style="font-size:0.65rem;color:var(--muted);margin-top:6px;">
+        Post errors: ${postErrors} &nbsp;|&nbsp; Length: ${payload.length} bits
+      </div>
+    </div>`;
+
+  // consume bits up to end of packet (avoid re-decoding)
+  rxBitBuffer.splice(0, endIdx);
+}
+
+// =====================================================================
+// DEBUG GRAPH (uses rxGraphData with threshold line + dots)
+// =====================================================================
+function drawDebugGraph() {
+  const canvas = document.getElementById('debugCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  // background
+  ctx.fillStyle = '#020c14';
+  ctx.fillRect(0,0,W,H);
+
+  const n = rxGraphData.length;
+  if (n < 2) return;
+
+  // threshold line
+  const th = rxGraphData[n-1].threshold;
+  const thY = H - (th/255)*H;
+  ctx.strokeStyle = 'rgba(255,107,53,0.5)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(0,thY); ctx.lineTo(W,thY); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // luma line
+  ctx.strokeStyle = '#00d4ff';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  rxGraphData.forEach((d,i) => {
+    const x = (i/(n-1))*W;
+    const y = H - (d.luma/255)*H;
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  // bit dots
+  rxGraphData.forEach((d,i) => {
+    const x = (i/(n-1))*W;
+    const y = H - (d.luma/255)*H;
+    ctx.fillStyle = d.bit === 1 ? '#00ff9d' : 'rgba(74,122,153,0.6)';
+    ctx.beginPath();
+    ctx.arc(x,y,2.5,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  // legend
+  ctx.fillStyle = 'rgba(0,212,255,0.7)';
+  ctx.font = '9px Share Tech Mono';
+  ctx.fillText('LUMA', 4, 12);
+  ctx.fillStyle = 'rgba(255,107,53,0.7)';
+  ctx.fillText('THRESH', 4, 24);
+}
+
+// =====================================================================
+// RECEIVER LOG
+// =====================================================================
+function rLog(msg, type) {
+  const log = document.getElementById('rLog');
+  const line = document.createElement('div');
+  if(type==='ok') line.className='ls';
+  else if(type==='err'||type==='warn') line.className='le';
+  line.textContent = '> ' + msg;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+// =====================================================================
+// INIT
+// =====================================================================
+updatePacketPreview();
+</script>
+</body>
+</html>
