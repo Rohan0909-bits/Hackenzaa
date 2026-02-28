@@ -1,716 +1,1478 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>U-Flash · Optical Comm</title>
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
-<style>
-:root{--bg:#020c14;--card:#071f2e;--border:#0e4a6e;--accent:#00d4ff;--green:#00ff9d;--warn:#ff6b35;--text:#c8e8f8;--muted:#4a7a99;--pre:#ffe066;--glow:0 0 18px rgba(0,212,255,.35)}
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace;min-height:100vh}
-.app{max-width:480px;margin:0 auto;padding:14px}
-header{text-align:center;padding:16px 0 12px;border-bottom:1px solid var(--border);margin-bottom:16px}
-h1{font-family:'Orbitron',monospace;font-size:1.7rem;font-weight:900;color:var(--accent);text-shadow:var(--glow)}
-header p{font-size:.65rem;color:var(--muted);margin-top:3px;letter-spacing:.15em;text-transform:uppercase}
-.tabs{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:16px}
-.tab{flex:1;padding:11px;background:var(--card);border:none;color:var(--muted);font-family:'Orbitron',monospace;font-size:.72rem;font-weight:700;letter-spacing:.1em;cursor:pointer;transition:.2s;text-transform:uppercase}
-.tab.on{background:var(--accent);color:var(--bg)}
-.panel{display:none}.panel.on{display:block}
-.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:15px;margin-bottom:13px;position:relative}
-.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.5}
-.ct{font-family:'Orbitron',monospace;font-size:.6rem;color:var(--accent);letter-spacing:.2em;text-transform:uppercase;margin-bottom:11px}
-.lbl{display:block;font-size:.6rem;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin:9px 0 3px}
-.lbl:first-child{margin-top:0}
-input,textarea,select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--green);font-family:'Share Tech Mono',monospace;font-size:.87rem;padding:7px 9px;outline:none;transition:border-color .2s}
-input:focus,textarea:focus,select:focus{border-color:var(--accent)}
-textarea{resize:vertical;min-height:50px}
-.r2{display:flex;gap:9px}.r2>*{flex:1}
-.btn{display:flex;align-items:center;justify-content:center;padding:10px 12px;border:none;border-radius:5px;font-family:'Share Tech Mono',monospace;font-size:.78rem;cursor:pointer;transition:.2s;width:100%;margin-top:5px;letter-spacing:.05em}
-.bp{background:var(--accent);color:var(--bg)}.bp:hover:not(:disabled){background:#2de0ff;box-shadow:var(--glow)}
-.bg{background:var(--green);color:var(--bg)}.bg:hover:not(:disabled){background:#22ffb0}
-.bw{background:var(--warn);color:#fff}.bw:hover:not(:disabled){background:#ff8555}
-.btn:disabled{opacity:.35;cursor:not-allowed}
-.br{display:flex;gap:7px}.br .btn{flex:1}
-.badge{display:inline-block;font-size:.6rem;padding:3px 8px;border-radius:3px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:7px}
-.bi{background:rgba(74,122,153,.2);color:var(--muted);border:1px solid var(--border)}
-.bo{background:rgba(0,255,157,.15);color:var(--green);border:1px solid var(--green)}
-.ba{background:rgba(0,212,255,.15);color:var(--accent);border:1px solid var(--accent)}
-.bs{background:rgba(255,107,53,.2);color:var(--warn);border:1px solid var(--warn);animation:bk .5s step-end infinite}
-.bpre{background:rgba(255,224,102,.15);color:var(--pre);border:1px solid var(--pre);animation:bk .4s step-end infinite}
-@keyframes bk{50%{opacity:.2}}
-.pw{height:5px;background:var(--bg);border-radius:3px;border:1px solid var(--border);overflow:hidden;margin:7px 0}
-.pb{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));width:0%;transition:width .1s}
-.vf-wrap{position:relative;border-radius:6px;overflow:hidden;background:#000;border:1px solid var(--border);line-height:0}
-#vid{display:none}
-#vc{width:100%;display:block}
-.vf-lumabar{position:absolute;bottom:6px;left:6px;right:6px;height:7px;border-radius:3px;background:rgba(0,0,0,.55);overflow:hidden;pointer-events:none}
-.vf-lumafill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--green));transition:width .06s}
-.vf-statelbl{position:absolute;top:7px;right:8px;font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.1em;text-shadow:0 1px 4px #000,0 0 8px #000;pointer-events:none}
-#gc{width:100%;display:block;border-radius:5px;border:1px solid var(--border);background:#000;margin-top:7px}
-.bits{font-family:'Share Tech Mono',monospace;font-size:.78rem;letter-spacing:.06em;word-break:break-all;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:7px 9px;min-height:36px;line-height:1.8}
-.b1{color:var(--green)}.b0{color:var(--muted)}.bpx{color:var(--pre)}.bex{color:var(--warn)}
-.result{background:rgba(0,255,157,.07);border:2px solid var(--green);border-radius:7px;padding:14px;margin-top:5px;animation:fi .4s ease}
-@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.rl{font-size:.58rem;color:var(--green);letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px}
-.rt{font-size:1.5rem;color:var(--green);word-break:break-word;margin-bottom:7px;font-family:'Orbitron',monospace;text-shadow:0 0 14px rgba(0,255,157,.6)}
-.rb{font-size:.65rem;color:var(--muted);word-break:break-all;line-height:1.6}
-.rm{font-size:.58rem;color:var(--muted);margin-top:5px}
-.log{font-size:.6rem;color:var(--muted);max-height:85px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:5px 8px;line-height:1.7}
-.lok{color:var(--accent)}.lerr{color:var(--warn)}.lpre{color:var(--pre)}
-#flashOverlay{display:none;position:fixed;inset:0;z-index:9999}
-.note{font-size:.59rem;color:var(--muted);margin-top:4px;line-height:1.5}
-.sep{height:1px;background:var(--border);margin:10px 0;opacity:.4}
-#preBanner{display:none;text-align:center;padding:9px;background:rgba(255,224,102,.1);border:1px solid var(--pre);border-radius:5px;color:var(--pre);font-family:'Orbitron',monospace;font-size:.67rem;letter-spacing:.1em;margin-bottom:10px;animation:bk .5s step-end infinite}
-#preBanner.on{display:block}
-::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-</style>
+  <meta charset="UTF-8" />
+    <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#090b0e" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>LI-FI // OWC TERMINAL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
+  <style>
+/* =====================================================
+   LI-FI OWC TERMINAL — style.css
+   Aesthetic: Retro-futuristic communications hardware
+   Fonts: Orbitron (display) + Share Tech Mono (body)
+   ===================================================== */
+
+:root {
+  --bg:         #090b0e;
+  --bg2:        #0d1117;
+  --bg3:        #141a22;
+  --border:     #1e2a35;
+  --border2:    #243040;
+  --amber:      #f5a623;
+  --amber-dim:  #7a5010;
+  --amber-glow: rgba(245,166,35,0.18);
+  --cyan:       #00e5ff;
+  --cyan-dim:   #004d5a;
+  --cyan-glow:  rgba(0,229,255,0.14);
+  --green:      #39ff14;
+  --green-dim:  #1a4d0a;
+  --red:        #ff3131;
+  --red-dim:    #4d0d0d;
+  --text:       #c8d8e4;
+  --text-dim:   #4a6070;
+  --white:      #ffffff;
+  --font-mono:  'Share Tech Mono', monospace;
+  --font-disp:  'Orbitron', monospace;
+  --bit-size:   10px;
+  --radius:     4px;
+  --trans:      0.2s ease;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%; height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  overflow-x: hidden;
+}
+
+/* ── Scanlines CRT overlay ── */
+.scanlines {
+  pointer-events: none;
+  position: fixed; inset: 0; z-index: 9999;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0,0,0,0.08) 2px,
+    rgba(0,0,0,0.08) 4px
+  );
+}
+
+.hidden { display: none !important; }
+.dim { color: var(--text-dim); }
+
+/* =====================================================
+   BOOT SCREEN
+   ===================================================== */
+#boot-screen {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg);
+}
+.boot-logo {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  text-align: center;
+}
+.boot-title {
+  font-family: var(--font-disp);
+  font-size: clamp(48px, 10vw, 96px);
+  font-weight: 900;
+  color: var(--amber);
+  text-shadow: 0 0 40px var(--amber), 0 0 80px var(--amber-dim);
+  letter-spacing: 0.25em;
+  animation: flicker 3s infinite;
+}
+.boot-sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--cyan);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+.boot-bar-wrap {
+  width: 280px; height: 4px;
+  background: var(--border); border-radius: 2px;
+  overflow: hidden; margin-top: 20px;
+}
+.boot-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--amber), var(--cyan));
+  box-shadow: 0 0 10px var(--amber);
+  transition: width 0.05s linear;
+}
+.boot-status {
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.2em;
+}
+
+/* =====================================================
+   APP SHELL
+   ===================================================== */
+#app {
+  display: flex; flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+.app-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+  position: sticky; top: 0; z-index: 100;
+}
+.header-left { display: flex; align-items: baseline; gap: 8px; }
+.logo-text {
+  font-family: var(--font-disp);
+  font-weight: 900; font-size: 20px;
+  color: var(--amber);
+  text-shadow: 0 0 20px var(--amber-dim);
+  letter-spacing: 0.15em;
+}
+.logo-tag {
+  font-size: 9px; color: var(--text-dim);
+  letter-spacing: 0.2em; text-transform: uppercase;
+}
+.mode-toggle { display: flex; gap: 4px; }
+.mode-btn {
+  font-family: var(--font-disp);
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 6px 14px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer; border-radius: var(--radius);
+  transition: all var(--trans);
+}
+.mode-btn:hover {
+  border-color: var(--amber);
+  color: var(--amber);
+  background: var(--amber-glow);
+}
+.mode-btn.active {
+  border-color: var(--amber);
+  color: var(--amber);
+  background: var(--amber-glow);
+  box-shadow: 0 0 12px var(--amber-dim);
+}
+.header-right { display: flex; align-items: center; gap: 6px; }
+.signal-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--text-dim);
+  transition: background var(--trans), box-shadow var(--trans);
+}
+.signal-dot.active { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.signal-dot.busy   { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+.signal-dot.error  { background: var(--red);   box-shadow: 0 0 8px var(--red); }
+.signal-label { font-size: 9px; letter-spacing: 0.2em; color: var(--text-dim); }
+
+/* ── Panels ── */
+.panel { display: none; padding: 16px 20px; flex: 1; }
+.panel.active { display: block; }
+.panel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  max-width: 1100px; margin: 0 auto;
+}
+@media (max-width: 720px) {
+  .panel-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Section Labels ── */
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 9px; letter-spacing: 0.25em;
+  color: var(--cyan); text-transform: uppercase;
+  margin-bottom: 8px; margin-top: 16px;
+}
+.section-label:first-child { margin-top: 0; }
+
+/* ── Textarea ── */
+textarea {
+  width: 100%;
+  background: var(--bg3); border: 1px solid var(--border2);
+  color: var(--text); font-family: var(--font-mono); font-size: 13px;
+  padding: 10px 12px; border-radius: var(--radius);
+  resize: vertical; min-height: 80px;
+  outline: none; transition: border-color var(--trans);
+}
+textarea:focus { border-color: var(--amber); }
+textarea::placeholder { color: var(--text-dim); }
+.char-count { text-align: right; font-size: 9px; color: var(--text-dim); margin-top: 4px; }
+
+/* ── Binary Display ── */
+.binary-display {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 10px 12px;
+  min-height: 54px; word-break: break-all; line-height: 1.8;
+  font-size: var(--bit-size); letter-spacing: 0.08em;
+  color: var(--amber);
+}
+.binary-display .bit-1 { color: var(--amber); }
+.binary-display .bit-0 { color: var(--amber-dim); }
+
+/* ── Protocol Frame Display ── */
+.frame-display {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 10px 12px;
+  font-size: 10px; min-height: 44px;
+}
+.preamble-label, .data-label, .postamble-label {
+  font-size: 8px; letter-spacing: 0.15em;
+  padding: 2px 5px; border-radius: 2px; text-transform: uppercase;
+}
+.preamble-label  { background: var(--cyan-dim);  color: var(--cyan); }
+.data-label      { background: var(--amber-dim); color: var(--amber); }
+.postamble-label { background: var(--red-dim);   color: var(--red); }
+.frame-preamble  { color: var(--cyan); letter-spacing: 0.1em; }
+.frame-data      { color: var(--amber); word-break: break-all; flex: 1; }
+.frame-postamble { color: var(--red); letter-spacing: 0.1em; }
+
+/* ── Buttons ── */
+.btn-row { display: flex; gap: 8px; margin-top: 14px; }
+.action-btn {
+  font-family: var(--font-disp); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.15em; padding: 10px 18px;
+  border-radius: var(--radius); border: 1px solid;
+  cursor: pointer; transition: all var(--trans); flex: 1;
+}
+.action-btn.primary {
+  border-color: var(--amber); color: var(--amber);
+  background: var(--amber-glow);
+}
+.action-btn.primary:hover:not(:disabled) {
+  background: var(--amber); color: var(--bg);
+  box-shadow: 0 0 20px var(--amber);
+}
+.action-btn.secondary {
+  border-color: var(--border2); color: var(--text-dim); background: transparent;
+}
+.action-btn.secondary:hover {
+  border-color: var(--cyan); color: var(--cyan); background: var(--cyan-glow);
+}
+.action-btn.danger {
+  border-color: var(--red); color: var(--red); background: var(--red-dim);
+}
+.action-btn.danger:hover {
+  background: var(--red); color: var(--bg);
+}
+.action-btn:disabled {
+  opacity: 0.35; cursor: not-allowed;
+}
+
+/* =====================================================
+   SENDER — Visual Indicator
+   ===================================================== */
+.flashlight-indicator-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  padding: 24px; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.flashlight-indicator {
+  position: relative; width: 80px; height: 80px;
+  display: flex; align-items: center; justify-content: center;
+}
+.indicator-core {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--bg2); border: 2px solid var(--border2);
+  transition: all 0.1s ease;
+  z-index: 2;
+}
+.indicator-ring {
+  position: absolute; border-radius: 50%;
+  border: 1px solid var(--border);
+  opacity: 0; transition: all 0.1s ease;
+}
+.ring1 { width: 56px; height: 56px; }
+.ring2 { width: 76px; height: 76px; }
+
+/* ON state */
+.indicator-on .indicator-core {
+  background: var(--amber);
+  box-shadow: 0 0 30px var(--amber), 0 0 60px var(--amber-dim);
+  border-color: var(--amber);
+}
+.indicator-on .ring1 {
+  border-color: var(--amber); opacity: 0.6;
+  animation: pulse-ring 0.3s ease-out forwards;
+}
+.indicator-on .ring2 {
+  border-color: var(--amber-dim); opacity: 0.3;
+  animation: pulse-ring 0.3s ease-out 0.05s forwards;
+}
+
+/* TX-bit-specific coloring */
+.indicator-bit-active .indicator-core { background: var(--green); box-shadow: 0 0 25px var(--green); border-color: var(--green); }
+
+.indicator-state {
+  font-family: var(--font-disp); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.2em; color: var(--text-dim);
+}
+
+/* ── TX Log ── */
+.tx-log {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 8px 10px;
+  min-height: 80px; max-height: 120px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.log-entry {
+  font-size: 10px; line-height: 1.5;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 2px;
+}
+.log-entry.ok  { color: var(--green); }
+.log-entry.err { color: var(--red); }
+.log-entry.tx  { color: var(--amber); }
+.log-entry.info { color: var(--cyan); }
+
+/* ── Progress ── */
+.progress-wrap { margin-top: 12px; }
+.progress-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-dim); margin-bottom: 4px; }
+.progress-track { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.progress-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--amber), var(--cyan));
+  box-shadow: 0 0 8px var(--amber);
+  transition: width 0.1s ease;
+}
+
+/* ── Screen Flash (iOS fallback) ── */
+.screen-flash {
+  position: fixed; inset: 0; z-index: 500;
+  pointer-events: none; transition: background 0.05s;
+}
+.screen-flash.on { background: rgba(255,255,255,0.98); }
+.screen-flash.off { background: rgba(0,0,0,0.92); }
+
+/* =====================================================
+   RECEIVER
+   ===================================================== */
+.receiver-grid { grid-template-columns: 1.1fr 0.9fr; }
+@media (max-width: 720px) { .receiver-grid { grid-template-columns: 1fr; } }
+
+.video-wrap {
+  position: relative;
+  width: 100%; padding-bottom: 75%; /* 4:3 ratio */
+  background: #000; border: 1px solid var(--border2);
+  border-radius: var(--radius); overflow: hidden;
+}
+#receiver-video {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.hidden-canvas { display: none; }
+
+/* ── Reticle Overlay ── */
+.reticle-overlay {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 12px; pointer-events: none;
+}
+.reticle-box {
+  width: 50px; height: 50px;
+  position: relative;
+}
+/* Corners instead of a full border — more tactical feel */
+.reticle-corner {
+  position: absolute; width: 12px; height: 12px;
+  border-color: var(--green); border-style: solid;
+}
+.reticle-corner.tl { top: 0; left: 0; border-width: 2px 0 0 2px; }
+.reticle-corner.tr { top: 0; right: 0; border-width: 2px 2px 0 0; }
+.reticle-corner.bl { bottom: 0; left: 0; border-width: 0 0 2px 2px; }
+.reticle-corner.br { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
+/* Animated glow when active */
+.reticle-box.scanning .reticle-corner {
+  animation: reticle-pulse 1s ease-in-out infinite;
+}
+.reticle-box.locked .reticle-corner {
+  border-color: var(--amber);
+  animation: reticle-lock 0.5s ease-in-out infinite alternate;
+}
+.reticle-label {
+  font-family: var(--font-mono); font-size: 9px;
+  letter-spacing: 0.2em; color: var(--green);
+  text-transform: uppercase;
+  background: rgba(0,0,0,0.55); padding: 3px 8px; border-radius: 2px;
+  text-shadow: 0 0 8px var(--green);
+}
+
+/* ── RX State Badge ── */
+.rx-state-badge {
+  position: absolute; top: 8px; left: 8px;
+  font-family: var(--font-disp); font-size: 9px;
+  font-weight: 700; letter-spacing: 0.2em;
+  padding: 3px 8px; border-radius: 2px;
+  background: rgba(0,0,0,0.7); border: 1px solid var(--border2);
+  color: var(--text-dim); text-transform: uppercase;
+  transition: all var(--trans);
+}
+.rx-state-badge.calibrating { border-color: var(--cyan); color: var(--cyan); }
+.rx-state-badge.scanning    { border-color: var(--amber); color: var(--amber); }
+.rx-state-badge.reading     { border-color: var(--green); color: var(--green); background: rgba(57,255,20,0.08); }
+.rx-state-badge.done        { border-color: var(--cyan); color: var(--cyan); }
+
+/* ── Brightness Graph ── */
+.graph-canvas {
+  width: 100%; height: 120px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); display: block;
+}
+
+/* ── RX Stats Row ── */
+.rx-stats {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+  margin-top: 10px;
+}
+.stat-box {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 8px;
+  text-align: center;
+}
+.stat-label { font-size: 8px; letter-spacing: 0.15em; color: var(--text-dim); display: block; }
+.stat-val   { font-family: var(--font-disp); font-size: 14px; color: var(--amber); display: block; margin-top: 2px; }
+
+/* ── Bit Buffer ── */
+.bit-buffer {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 10px 12px;
+  min-height: 44px; word-break: break-all;
+  font-size: 11px; letter-spacing: 0.1em;
+  line-height: 1.8; color: var(--amber-dim);
+}
+.bit-buffer .b1 { color: var(--green); }
+.bit-buffer .b0 { color: var(--red-dim); }
+.bit-buffer .preamble-bit { color: var(--cyan); }
+
+/* ── Decoded Output ── */
+.decoded-output {
+  background: var(--bg2); border: 2px solid var(--border2);
+  border-radius: var(--radius); padding: 14px 16px;
+  min-height: 60px; font-family: var(--font-disp);
+  font-size: 18px; color: var(--green);
+  letter-spacing: 0.08em;
+  box-shadow: inset 0 0 20px rgba(57,255,20,0.06);
+  word-break: break-word;
+  transition: box-shadow var(--trans);
+}
+.decoded-output.flash {
+  box-shadow: inset 0 0 40px rgba(57,255,20,0.2), 0 0 20px rgba(57,255,20,0.15);
+}
+
+/* =====================================================
+   ANIMATIONS
+   ===================================================== */
+@keyframes flicker {
+  0%, 90%, 100% { opacity: 1; }
+  91%           { opacity: 0.7; }
+  93%           { opacity: 1; }
+  95%           { opacity: 0.5; }
+  97%           { opacity: 0.9; }
+}
+@keyframes pulse-ring {
+  from { transform: scale(0.8); opacity: 0.7; }
+  to   { transform: scale(1.1); opacity: 0; }
+}
+@keyframes reticle-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+@keyframes reticle-lock {
+  from { box-shadow: 0 0 0 0 rgba(245,166,35,0); }
+  to   { box-shadow: 0 0 12px 3px rgba(245,166,35,0.4); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.log-entry { animation: fadeIn 0.15s ease; }
+
+/* ── Custom scrollbar ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg2); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--amber-dim); }
+
+  </style>
 </head>
 <body>
-<div id="flashOverlay"></div>
-<div class="app">
-  <header><h1>U-FLASH</h1><p>Optical Comm · Sprint 1</p></header>
-  <div class="tabs">
-    <button class="tab on" onclick="setTab('s')">⚡ Sender</button>
-    <button class="tab"    onclick="setTab('r')">📡 Receiver</button>
-  </div>
+  <noscript>
+    <div style="padding:12px;margin:12px;border:1px solid #243040;font-family:monospace;color:#c8d8e4;background:#0d1117;">
+      This app requires JavaScript to run.
+    </div>
+  </noscript>
 
-  <!-- SENDER -->
-  <div class="panel on" id="SP">
-    <div class="card">
-      <div class="ct">Message</div>
-      <span class="lbl">Mode</span>
-      <select id="sMode" onchange="modeChg()">
-        <option value="text">Text (ASCII)</option>
-        <option value="bits">Raw Bits</option>
-      </select>
-      <div id="sTW">
-        <span class="lbl">Text Message</span>
-        <textarea id="sTxt" placeholder="Type your message…">Hello</textarea>
-      </div>
-      <div id="sBW" style="display:none">
-        <span class="lbl">Binary Bits</span>
-        <textarea id="sBts" placeholder="10110…">10110010</textarea>
-      </div>
-      <div class="r2" style="margin-top:9px">
-        <div>
-          <span class="lbl">Bit Duration Tb (ms)</span>
-          <input type="number" id="sTb" value="300" min="150" max="2000" step="10">
-          <div class="note">300ms recommended</div>
-        </div>
-        <div>
-          <span class="lbl">Gap Zeros</span>
-          <input type="number" id="sGap" value="8" min="4" max="32">
-          <div class="note">0-bits before payload</div>
-        </div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="ct">Packet Preview</div>
-      <div class="bits" id="sPrev">–</div>
-      <div id="sPInfo" class="note" style="margin-top:5px">–</div>
-    </div>
-    <div class="card">
-      <div class="ct">Transmit</div>
-      <span class="badge bi" id="sStatus">IDLE</span>
-      <div class="pw"><div class="pb" id="sProg"></div></div>
-      <div id="sLbl" style="font-size:.6rem;color:var(--muted);margin-bottom:7px">–</div>
-      <button class="btn bp" id="btnInit" onclick="initTx()">⚡ Init Torch / Screen Flash</button>
-      <div id="txInfo" class="note">Tap first. Android Chrome = torch; others = full-screen flash.</div>
-      <div class="br" style="margin-top:7px">
-        <button class="btn bg" id="btnSend" onclick="doSend()" disabled>▶ Send Packet</button>
-        <button class="btn bw" id="btnStop" onclick="stopSend()" disabled>■ Stop</button>
-      </div>
-      <div class="sep"></div>
-      <div class="log" id="sLog"><span class="lok">// ready — init torch first</span></div>
+
+  <!-- Scanline overlay for CRT effect -->
+  <div class="scanlines"></div>
+
+  <!-- ==================== BOOT SCREEN ==================== -->
+  <div id="boot-screen">
+    <div class="boot-logo">
+      <span class="boot-title">LI-FI</span>
+      <span class="boot-sub">OPTICAL WIRELESS COMMUNICATION TERMINAL</span>
+      <div class="boot-bar-wrap"><div class="boot-bar" id="boot-bar"></div></div>
+      <span class="boot-status" id="boot-status">INITIALIZING...</span>
     </div>
   </div>
 
-  <!-- RECEIVER -->
-  <div class="panel" id="RP">
-    <div class="card">
-      <div class="ct">Settings</div>
-      <div class="r2">
-        <div>
-          <span class="lbl">Bit Duration Tb (ms)</span>
-          <input type="number" id="rTb" value="300" min="150" max="2000" step="10">
-          <div class="note" style="color:var(--warn)">⚠ Must match sender exactly</div>
+  <!-- ==================== MAIN APP ==================== -->
+  <div id="app" class="hidden">
+
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <span class="logo-text">LI-FI</span>
+        <span class="logo-tag">OWC v1.0</span>
+      </div>
+      <div class="mode-toggle">
+        <button id="btn-sender" class="mode-btn active" data-mode="sender">⟶ SENDER</button>
+        <button id="btn-receiver" class="mode-btn" data-mode="receiver">⟵ RECEIVER</button>
+      </div>
+      <div class="header-right">
+        <span class="signal-dot" id="signal-dot"></span>
+        <span class="signal-label" id="signal-label">IDLE</span>
+      </div>
+    </header>
+
+    <!-- ==================== SENDER PANEL ==================== -->
+    <section id="panel-sender" class="panel active">
+      <div class="panel-grid">
+
+        <!-- Left: Input & Controls -->
+        <div class="sender-controls">
+          <div class="section-label">// INPUT MESSAGE</div>
+          <textarea id="sender-input" placeholder="Type your message here..." maxlength="128"></textarea>
+          <div class="char-count"><span id="char-count">0</span>/128</div>
+
+          <div class="section-label">// BINARY PAYLOAD</div>
+          <div id="binary-display" class="binary-display">
+            <span class="dim">Binary output will appear here...</span>
+          </div>
+
+          <div class="section-label">// PROTOCOL FRAME</div>
+          <div id="frame-display" class="frame-display">
+            <span class="preamble-label">PREAMBLE</span>
+            <span id="frame-preamble" class="frame-preamble">101011</span>
+            <span class="data-label">DATA</span>
+            <span id="frame-data" class="frame-data dim">—</span>
+            <span class="postamble-label">POSTAMBLE</span>
+            <span id="frame-postamble" class="frame-postamble">000000</span>
+          </div>
+
+          <div class="btn-row">
+            <button id="btn-convert" class="action-btn secondary">ENCODE</button>
+            <button id="btn-transmit" class="action-btn primary" disabled>TRANSMIT</button>
+          </div>
         </div>
-        <div>
-          <span class="lbl">Box Size (%)</span>
-          <input type="number" id="rROI" value="35" min="10" max="80">
-          <div class="note">Capture box size</div>
+
+        <!-- Right: Visual Indicator & Status -->
+        <div class="sender-visual">
+          <div class="section-label">// SIGNAL INDICATOR</div>
+          <div class="flashlight-indicator-wrap">
+            <div class="flashlight-indicator" id="flashlight-indicator">
+              <div class="indicator-core" id="indicator-core"></div>
+              <div class="indicator-ring ring1"></div>
+              <div class="indicator-ring ring2"></div>
+            </div>
+            <div class="indicator-state" id="indicator-state">STANDBY</div>
+          </div>
+
+          <div class="section-label" style="margin-top:24px">// TRANSMISSION LOG</div>
+          <div class="tx-log" id="tx-log">
+            <div class="log-entry dim">Awaiting transmission...</div>
+          </div>
+
+          <div class="progress-wrap hidden" id="progress-wrap">
+            <div class="progress-label">
+              <span id="progress-bit">BIT 0/0</span>
+              <span id="progress-pct">0%</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" id="progress-fill"></div>
+            </div>
+          </div>
+
+          <!-- Screen flash overlay for iOS fallback -->
+          <div id="screen-flash" class="screen-flash hidden"></div>
         </div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="ct">Camera — aim ⊕ box at sender light</div>
-      <div class="vf-wrap">
-        <video id="vid" autoplay muted playsinline></video>
-        <canvas id="vc"></canvas>
-        <div class="vf-lumabar"><div class="vf-lumafill" id="lBar"></div></div>
-        <div class="vf-statelbl" id="vcLbl" style="color:var(--pre)">HUNTING</div>
-      </div>
-      <canvas id="gc" height="68"></canvas>
-      <div style="font-size:.6rem;color:var(--muted);margin-top:4px;line-height:1.9">
-        Luma:<span id="lVal" style="color:var(--accent)">–</span>
-        Min:<span id="lMin">–</span> Max:<span id="lMax">–</span>
-        Thresh:<span id="lTh" style="color:var(--pre)">–</span>
-        S/bit:<span id="lSpb" style="color:var(--green)">–</span>
-      </div>
-    </div>
-    <div class="card">
-      <div class="ct">Receiver Control</div>
-      <span class="badge bi" id="rStatus">IDLE</span>
-      <div id="preBanner">⚡ PREAMBLE LOCKED — COLLECTING PAYLOAD</div>
-      <div class="br">
-        <button class="btn bp" id="btnRxStart" onclick="startRx()">📷 Start Receiver</button>
-        <button class="btn bw" id="btnRxStop"  onclick="stopRx()" disabled>■ Stop</button>
-      </div>
-    </div>
-    <div class="card">
-      <div class="ct">Live Bit Stream</div>
-      <div class="bits" id="rBits">–</div>
-      <div style="font-size:.6rem;color:var(--muted);margin-top:4px">
-        Bits:<span id="rCnt" style="color:var(--accent)">0</span>
-        Pkts:<span id="rPkts" style="color:var(--green)">0</span>
-        State:<span id="rState" style="color:var(--pre)">HUNT</span>
-      </div>
-    </div>
-    <div id="rResult"></div>
-    <div class="card">
-      <div class="ct">Log</div>
-      <div class="log" id="rLog"><span class="lok">// receiver ready</span></div>
-    </div>
-  </div>
-</div>
 
-<script>
-'use strict';
+      </div>
+    </section>
 
-// ═══════════════════════════════════════════════════════════════════════
-//  PROTOCOL  — length-prefixed, no fragile end-marker searching
-//
-//  Packet: PRE(16) + GAP(8 zeros) + LEN_HIGH(8) + LEN_LOW(8) + PAYLOAD(N×8) + POST(16)
-//
-//  PRE  = 1010101011001100   POST = 0011001101010101
-//  LEN  = 16-bit value = number of payload BITS
-//  GAP  = 8 zero-bits (camera exposure settle time)
-//
-//  Receiver:
-//   1. Timestamp every frame's luma into a ring buffer
-//   2. Every Tb ms, average samples in window → 1 bit (anchor-based, no drift)
-//   3. Fuzzy PRE match (≤2 errors) in sliding window over last 80 hunt bits
-//   4. On match: set lockBitStart = end of preamble's last window
-//   5. COLLECT: read windows anchored to lockBitStart — NO extraBits replay
-//      (ring buffer re-reads the data correctly)
-//   6. After GAP+16 bits: parse length header → know exact payload size
-//   7. After GAP+16+LEN bits: decode payload → display message
-// ═══════════════════════════════════════════════════════════════════════
+    <!-- ==================== RECEIVER PANEL ==================== -->
+    <section id="panel-receiver" class="panel hidden">
+      <div class="panel-grid receiver-grid">
 
-const PRE      = '1010101011001100';
-const POST     = '0011001101010101';
-const GAP_BITS = 8;
-const PRE_LEN  = PRE.length;
+        <!-- Left: Video + Reticle -->
+        <div class="receiver-video-col">
+          <div class="section-label">// OPTICAL SENSOR FEED</div>
+          <div class="video-wrap" id="video-wrap">
+            <video id="receiver-video" autoplay muted playsinline></video>
+            <canvas id="hidden-canvas" class="hidden-canvas"></canvas>
 
-const t2b = s => [...s].map(c=>c.charCodeAt(0).toString(2).padStart(8,'0')).join('');
-const b2t = b => {
-  let out='';
-  for(let i=0;i+8<=b.length;i+=8){
-    const v=parseInt(b.slice(i,i+8),2);
-    out+=(v>=32&&v<127)?String.fromCharCode(v):(v===10||v===13?'\n':'?');
+            <!-- Overlay reticle -->
+            <div class="reticle-overlay" id="reticle-overlay">
+              <div class="reticle-box" id="reticle-box">
+                <span class="reticle-corner tl"></span>
+                <span class="reticle-corner tr"></span>
+                <span class="reticle-corner bl"></span>
+                <span class="reticle-corner br"></span>
+              </div>
+              <div class="reticle-label">ALIGN FLASHLIGHT INSIDE BOX</div>
+            </div>
+
+            <!-- State badge on video -->
+            <div class="rx-state-badge" id="rx-state-badge">IDLE</div>
+          </div>
+
+          <div class="btn-row" style="margin-top:12px">
+            <button id="btn-calibrate" class="action-btn secondary">CALIBRATE</button>
+            <button id="btn-rx-start" class="action-btn primary">START RECEIVER</button>
+            <button id="btn-rx-stop" class="action-btn danger hidden">STOP</button>
+          </div>
+        </div>
+
+        <!-- Right: Graph + Decoder output -->
+        <div class="receiver-data-col">
+          <div class="section-label">// BRIGHTNESS SIGNAL (LIVE)</div>
+          <canvas id="graph-canvas" class="graph-canvas"></canvas>
+
+          <div class="rx-stats">
+            <div class="stat-box">
+              <span class="stat-label">THRESHOLD</span>
+              <span class="stat-val" id="stat-threshold">—</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">CURRENT</span>
+              <span class="stat-val" id="stat-current">—</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">STATE</span>
+              <span class="stat-val" id="stat-state">IDLE</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">BITS RX</span>
+              <span class="stat-val" id="stat-bits">0</span>
+            </div>
+          </div>
+
+          <div class="section-label">// DECODED BITS BUFFER</div>
+          <div class="bit-buffer" id="bit-buffer">
+            <span class="dim">—</span>
+          </div>
+
+          <div class="section-label">// DECODED MESSAGE</div>
+          <div class="decoded-output" id="decoded-output">
+            <span class="dim">Waiting for signal...</span>
+          </div>
+
+          <div class="section-label" style="margin-top:16px">// RECEIVE LOG</div>
+          <div class="tx-log" id="rx-log">
+            <div class="log-entry dim">Receiver not started.</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </div><!-- /app -->
+  <script>
+(() => {
+  "use strict";
+
+  // ============================================================
+  //  LI-FI OWC TERMINAL — single-file build
+  //  Optical Wireless Communication via On-Off Keying (OOK)
+  // ============================================================
+
+  // ─────────────────────────────────────────────
+  //  PROTOCOL CONSTANTS
+  // ─────────────────────────────────────────────
+  const BIT_RATE_MS       = 300;      // milliseconds per bit
+  const PREAMBLE          = "101011"; // 6-bit start-of-frame marker
+  const POSTAMBLE         = "000000"; // 6-bit end-of-frame marker
+  const THRESHOLD_OFFSET  = 30;       // brightness units above ambient to call a "1"
+  const CALIB_DURATION_MS = 2000;     // ambient measurement window
+  const ROI_SIZE          = 50;       // pixels — size of the sample region
+  const GRAPH_HISTORY     = 120;      // number of samples to show on chart
+  const EMA_ALPHA         = 0.02;     // ambient drift tracking coefficient
+
+  // ─────────────────────────────────────────────
+  //  Small helpers
+  // ─────────────────────────────────────────────
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  const $ = (id) => document.getElementById(id);
+  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+  function safeText(el, text) {
+    if (!el) return;
+    el.textContent = text;
   }
-  return out;
-};
-const esc     = s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-const hamming = (a,b)=>{let e=0;for(let i=0;i<a.length;i++)if(a[i]!==b[i])e++;return e;};
 
-// ── tab switch ───────────────────────────────────────────────────────
-function setTab(t){
-  document.querySelectorAll('.tab').forEach((el,i)=>
-    el.classList.toggle('on',(t==='s'&&i===0)||(t==='r'&&i===1)));
-  document.getElementById('SP').classList.toggle('on',t==='s');
-  document.getElementById('RP').classList.toggle('on',t==='r');
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-//  SENDER
-// ═══════════════════════════════════════════════════════════════════════
-function modeChg(){
-  const isTxt=document.getElementById('sMode').value==='text';
-  document.getElementById('sTW').style.display=isTxt?'':'none';
-  document.getElementById('sBW').style.display=isTxt?'none':'';
-  updatePrev();
-}
-['sTxt','sBts','sGap'].forEach(id=>document.getElementById(id).addEventListener('input',updatePrev));
-
-function getPayBits(){
-  if(document.getElementById('sMode').value==='text'){
-    const v=document.getElementById('sTxt').value;
-    return t2b(v||'Hello');
+  /** Convert text → ASCII binary (8 bits per char). */
+  function textToBinary(text) {
+    return Array.from(text).map((ch) =>
+      ch.charCodeAt(0).toString(2).padStart(8, "0")
+    ).join("");
   }
-  return document.getElementById('sBts').value.replace(/[^01]/g,'');
-}
 
-function buildPkt(){
-  const pay    =getPayBits();
-  const len    =pay.length;
-  const lH     =((len>>8)&0xFF).toString(2).padStart(8,'0');
-  const lL     =(len&0xFF).toString(2).padStart(8,'0');
-  const gap    ='0'.repeat(Math.max(4,parseInt(document.getElementById('sGap').value)||8));
-  return PRE+gap+lH+lL+pay+POST;
-}
-
-function updatePrev(){
-  const pay=getPayBits(), len=pay.length;
-  const lH=((len>>8)&0xFF).toString(2).padStart(8,'0');
-  const lL=(len&0xFF).toString(2).padStart(8,'0');
-  const gap='0'.repeat(Math.max(4,parseInt(document.getElementById('sGap').value)||8));
-  const pkt=PRE+gap+lH+lL+pay+POST;
-  const cc=(s,c)=>s.split('').map(b=>`<span class="${c}">${b}</span>`).join('');
-  document.getElementById('sPrev').innerHTML=
-    cc(PRE,'bpx')+cc(gap,'b0')+cc(lH,'bpx')+cc(lL,'bpx')+
-    pay.split('').map(b=>`<span class="b${b}">${b}</span>`).join('')+cc(POST,'bex');
-  const isTxt=document.getElementById('sMode').value==='text';
-  document.getElementById('sPInfo').textContent=
-    `Total:${pkt.length}b | Pre:${PRE_LEN} Gap:${gap.length} Len:16 Pay:${len} Post:${POST.length}`+
-    (isTxt?` | "${document.getElementById('sTxt').value}"`:'');
-}
-updatePrev();
-
-let txStream=null,txTrack=null,txTorch=false,txActive=false,txTimer=null;
-
-async function initTx(){
-  const btn=document.getElementById('btnInit');
-  btn.disabled=true; slog('Requesting camera…');
-  try{
-    txStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
-    txTrack=txStream.getVideoTracks()[0];
-    const caps=txTrack.getCapabilities?.()??{};
-    txTorch=!!caps.torch;
-    slog(txTorch?'✓ Hardware torch ready':'No torch — screen flash',txTorch?'ok':'');
-    document.getElementById('txInfo').textContent=txTorch
-      ?'✓ Torch ready (Android Chrome)'
-      :'⚠ Screen flash — aim screen at receiver lens';
-    if(txTorch)document.getElementById('txInfo').style.color='var(--green)';
-    setSS('bo',txTorch?'TORCH':'SCREEN');
-  }catch(e){
-    slog('Camera denied — screen flash');
-    txTorch=false; setSS('bo','SCREEN');
-    document.getElementById('txInfo').textContent='⚠ Screen flash mode';
-  }
-  document.getElementById('btnSend').disabled=false;
-  btn.disabled=false;
-}
-
-async function lightSet(on){
-  if(txTorch&&txTrack){
-    try{await txTrack.applyConstraints({advanced:[{torch:on}]});}catch(_){}
-  }else{
-    const o=document.getElementById('flashOverlay');
-    if(on){o.style.display='block';o.style.background='white';}
-    else{o.style.display='none';}
-  }
-}
-
-async function doSend(){
-  if(txActive)return;
-  const Tb=Math.max(150,parseInt(document.getElementById('sTb').value)||300);
-  const pkt=buildPkt();
-  txActive=true;
-  document.getElementById('btnSend').disabled=true;
-  document.getElementById('btnStop').disabled=false;
-  setSS('bs','TX');
-  slog(`Sending ${pkt.length} bits @ Tb=${Tb}ms → "${document.getElementById('sTxt').value||''}"`);
-  const ov=document.getElementById('flashOverlay');
-  if(!txTorch){ov.style.display='block';ov.style.background='black';}
-  await new Promise(r=>setTimeout(r,200));
-  let i=0;
-  const t0=performance.now();
-  function step(){
-    if(!txActive||i>=pkt.length){
-      lightSet(false);
-      if(!txTorch)ov.style.display='none';
-      txActive=false;
-      document.getElementById('btnSend').disabled=false;
-      document.getElementById('btnStop').disabled=true;
-      setSS('bo','DONE ✓');setP(0);
-      document.getElementById('sLbl').textContent='Complete ✓';
-      slog('✓ Done','ok');return;
+  /** Convert ASCII binary (8 bits per char) → text. */
+  function binaryToText(binary) {
+    const trimmed = binary.slice(0, Math.floor(binary.length / 8) * 8);
+    let out = "";
+    for (let i = 0; i < trimmed.length; i += 8) {
+      const byte = trimmed.slice(i, i + 8);
+      const n = parseInt(byte, 2);
+      out += String.fromCharCode(Number.isFinite(n) ? n : 0);
     }
-    lightSet(pkt[i]==='1');
-    setP(Math.round(i/pkt.length*100));
-    document.getElementById('sLbl').textContent=`Bit ${i+1}/${pkt.length} [${pkt[i]}]`;
-    i++;
-    txTimer=setTimeout(step,Math.max(0,t0+i*Tb-performance.now()));
+    return out;
   }
-  step();
-}
 
-function stopSend(){
-  clearTimeout(txTimer);txActive=false;lightSet(false);
-  document.getElementById('flashOverlay').style.display='none';
-  document.getElementById('btnSend').disabled=false;
-  document.getElementById('btnStop').disabled=true;
-  setSS('bi','IDLE');setP(0);slog('Stopped');
-}
-const setP=(p)=>document.getElementById('sProg').style.width=p+'%';
-const setSS=(cls,lbl)=>{const e=document.getElementById('sStatus');e.textContent=lbl;e.className='badge '+cls;};
-function slog(m,t){
-  const log=document.getElementById('sLog'),d=document.createElement('div');
-  d.className=t==='ok'?'lok':t==='err'?'lerr':'';
-  d.textContent='> '+m;log.appendChild(d);log.scrollTop=log.scrollHeight;
-}
+  /** Timestamped log entry (fails gracefully if element missing). */
+  function log(elementId, message, type = "") {
+    const container = $(elementId);
+    if (!container) {
+      console[type === "err" ? "error" : "log"](`[${elementId}] ${message}`);
+      return;
+    }
+    const entry = document.createElement("div");
+    entry.className = `log-entry ${type}`.trim();
+    const now = new Date();
+    const ts = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}:${String(now.getSeconds()).padStart(2,"0")}`;
+    entry.textContent = `[${ts}] ${message}`;
+    container.appendChild(entry);
+    container.scrollTop = container.scrollHeight;
+  }
 
-// ═══════════════════════════════════════════════════════════════════════
-//  RECEIVER
-// ═══════════════════════════════════════════════════════════════════════
-let rxStream=null,rxAF=null,rxOn=false,rxPktN=0;
-const RING_MAX=6000;
-let ring=[],ringMin=255,ringMax=0;
-let rxState='HUNT';
-let lockBitStart=0,lockBitIdx=0;
-let payBits=[],dispBits=[],rxFrameN=0,graphPts=[];
-let huntClock=0,huntBits=[],huntClockHistory=[];
-let expectedPayLen=-1;
+  /** Header signal indicator */
+  function setSignal(state, label) {
+    const dot = $("signal-dot");
+    const lbl = $("signal-label");
+    if (dot) dot.className = `signal-dot ${state}`.trim();
+    if (lbl) lbl.textContent = label;
+  }
 
-function rlog(m,t){
-  const log=document.getElementById('rLog'),d=document.createElement('div');
-  d.className=t==='ok'?'lok':t==='err'||t==='warn'?'lerr':t==='pre'?'lpre':'';
-  d.textContent='> '+m;log.appendChild(d);log.scrollTop=log.scrollHeight;
-}
+  /** Read CSS variables for Canvas colors (Canvas can't use var(--x) directly). */
+  function cssVar(name, fallback) {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return v || fallback;
+  }
 
-async function startRx(){
-  document.getElementById('btnRxStart').disabled=true;
-  rlog('Requesting camera…');
-  try{
-    rxStream=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:'environment',width:{ideal:640},height:{ideal:480},frameRate:{ideal:60}}
-    });
-    const vid=document.getElementById('vid');
-    vid.srcObject=rxStream;
-    await new Promise(r=>vid.onloadedmetadata=r);
-    await vid.play();
+  // ============================================================
+  //  BOOT ANIMATION
+  // ============================================================
+  const BOOT_MESSAGES = [
+    "CHECKING HARDWARE...",
+    "LOADING OOK PROTOCOL...",
+    "CALIBRATING THRESHOLDS...",
+    "INITIALISING CAMERA STACK...",
+    "READY.",
+  ];
 
-    // ── Lock camera exposure/focus so flash doesn't blow out ──────────
-    const track=rxStream.getVideoTracks()[0];
-    if(track.getCapabilities){
-      const caps=track.getCapabilities();
-      const adv={};
-      if(caps.exposureMode?.includes('manual')) adv.exposureMode='manual';
-      if(caps.whiteBalanceMode?.includes('manual')) adv.whiteBalanceMode='manual';
-      if(caps.focusMode?.includes('fixed')) adv.focusMode='fixed';
-      else if(caps.focusMode?.includes('manual')) adv.focusMode='manual';
-      if(Object.keys(adv).length){
-        try{await track.applyConstraints({advanced:[adv]});rlog('✓ Camera locked (exp/wb/focus)','ok');}
-        catch(e){rlog('Exposure lock n/a (OK)');}
+  function bootSequence() {
+    const bar = $("boot-bar");
+    const status = $("boot-status");
+    const boot = $("boot-screen");
+    const app = $("app");
+
+    if (!bar || !status || !boot || !app) return;
+
+    let i = 0;
+    const interval = setInterval(() => {
+      const pct = ((i + 1) / BOOT_MESSAGES.length) * 100;
+      bar.style.width = `${pct}%`;
+      status.textContent = BOOT_MESSAGES[i];
+      i++;
+      if (i >= BOOT_MESSAGES.length) {
+        clearInterval(interval);
+        setTimeout(() => {
+          boot.classList.add("hidden");
+          app.classList.remove("hidden");
+        }, 400);
       }
-    }
-
-    resetRx();rxOn=true;
-    document.getElementById('btnRxStop').disabled=false;
-    setRxSt('ba','HUNTING');
-    rlog('✓ Camera live — hunting preamble…','ok');
-    rxLoop();
-  }catch(e){
-    rlog('Camera error: '+e.message,'err');
-    document.getElementById('btnRxStart').disabled=false;
+    }, 280);
   }
-}
 
-function stopRx(){
-  rxOn=false;cancelAnimationFrame(rxAF);
-  rxStream?.getTracks().forEach(t=>t.stop());
-  rxStream=null;document.getElementById('vid').srcObject=null;
-  document.getElementById('btnRxStart').disabled=false;
-  document.getElementById('btnRxStop').disabled=true;
-  setRxSt('bi','IDLE');hideBanner();rlog('Stopped');
-}
+  // ============================================================
+  //  Shared state (Sender + Receiver)
+  // ============================================================
+  let rxState = "IDLE";
 
-function resetRx(){
-  ring=[];ringMin=255;ringMax=0;
-  rxState='HUNT';lockBitStart=0;lockBitIdx=0;
-  payBits=[];dispBits=[];rxFrameN=0;graphPts=[];
-  huntClock=0;huntBits=[];huntClockHistory=[];expectedPayLen=-1;
-  hideBanner();
-  document.getElementById('rCnt').textContent='0';
-  document.getElementById('rState').textContent='HUNT';
-}
+  // ============================================================
+  //  MODE SWITCHING
+  // ============================================================
+  function setupModeSwitching(stopReceiverFn) {
+    $$(".mode-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const mode = btn.dataset.mode;
 
-const setRxSt=(cls,lbl)=>{const e=document.getElementById('rStatus');e.textContent=lbl;e.className='badge '+cls;};
-const showBanner=()=>document.getElementById('preBanner').classList.add('on');
-const hideBanner=()=>document.getElementById('preBanner').classList.remove('on');
+        $$(".mode-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
 
-// ─────────────────────────────────────────────────────────────────────
-//  MAIN RX LOOP
-// ─────────────────────────────────────────────────────────────────────
-function rxLoop(){
-  const vid=document.getElementById('vid');
-  const vc=document.getElementById('vc');
-  const off=document.createElement('canvas');
-  off.width=vid.videoWidth||320;
-  off.height=vid.videoHeight||240;
-  vc.width=off.width;vc.height=off.height;
-  const octx=off.getContext('2d',{willReadFrequently:true});
-  const vctx=vc.getContext('2d');
+        const ps = $("panel-sender");
+        const pr = $("panel-receiver");
 
-  function frame(ts){
-    if(!rxOn)return;
-    rxAF=requestAnimationFrame(frame);
-    rxFrameN++;
-    const W=off.width,H=off.height;
+        if (ps) {
+          ps.classList.toggle("active", mode === "sender");
+          ps.classList.toggle("hidden", mode !== "sender");
+        }
+        if (pr) {
+          pr.classList.toggle("active", mode === "receiver");
+          pr.classList.toggle("hidden", mode !== "receiver");
+        }
 
-    // 1. Capture frame
-    octx.drawImage(vid,0,0,W,H);
-
-    // 2. ROI box (centred square)
-    const rp=parseInt(document.getElementById('rROI').value)/100;
-    const bW=Math.floor(W*rp),bH=Math.floor(H*rp);
-    const bX=Math.floor((W-bW)/2),bY=Math.floor((H-bH)/2);
-
-    // 3. Luma ONLY inside box
-    const px=octx.getImageData(bX,bY,bW,bH).data;
-    let sum=0;const npx=px.length>>2;
-    for(let k=0;k<px.length;k+=4)sum+=((77*px[k]+150*px[k+1]+29*px[k+2])>>8);
-    const luma=sum/npx;
-
-    // 4. Draw viewfinder overlay
-    vctx.drawImage(off,0,0,W,H);
-    // Darken outside box
-    vctx.fillStyle='rgba(0,0,0,0.45)';
-    vctx.fillRect(0,0,W,bY);
-    vctx.fillRect(0,bY+bH,W,H-(bY+bH));
-    vctx.fillRect(0,bY,bX,bH);
-    vctx.fillRect(bX+bW,bY,W-(bX+bW),bH);
-    // Box colour
-    const locked=rxState==='COLLECT';
-    const bxC=locked?'#00ff9d':'#ffe066';
-    const bxG=locked?'0,255,157':'255,224,102';
-    // Glow rect
-    vctx.shadowColor=`rgba(${bxG},0.65)`;vctx.shadowBlur=16;
-    vctx.strokeStyle=bxC;vctx.lineWidth=2;
-    vctx.strokeRect(bX+1,bY+1,bW-2,bH-2);
-    vctx.shadowBlur=0;
-    // Corner brackets
-    const cs=Math.min(20,Math.floor(bW*0.14));
-    vctx.strokeStyle=bxC;vctx.lineWidth=3;
-    [[bX,bY,1,1],[bX+bW,bY,-1,1],[bX+bW,bY+bH,-1,-1],[bX,bY+bH,1,-1]]
-      .forEach(([cx,cy,dx,dy])=>{
-        vctx.beginPath();
-        vctx.moveTo(cx+dx*cs,cy);vctx.lineTo(cx,cy);vctx.lineTo(cx,cy+dy*cs);
-        vctx.stroke();
+        // Stop receiver if we leave RX view.
+        if (mode === "sender" && rxState !== "IDLE") {
+          stopReceiverFn?.();
+        }
       });
-    // Crosshair
-    const mx=bX+bW/2,my=bY+bH/2,ch=8;
-    vctx.strokeStyle=bxC;vctx.lineWidth=1.5;
-    vctx.beginPath();
-    vctx.moveTo(mx-ch,my);vctx.lineTo(mx+ch,my);
-    vctx.moveTo(mx,my-ch);vctx.lineTo(mx,my+ch);
-    vctx.stroke();
-    // State label inside box
-    vctx.fillStyle=bxC;vctx.font='bold 9px Share Tech Mono,monospace';
-    vctx.textAlign='center';
-    vctx.shadowColor='rgba(0,0,0,.9)';vctx.shadowBlur=5;
-    vctx.fillText(locked?'● LOCKED':'○ HUNTING',mx,bY+bH-6);
-    vctx.shadowBlur=0;vctx.textAlign='left';
-    // HUD label
-    document.getElementById('vcLbl').textContent=locked?'⚡ LOCKED':'HUNTING';
-    document.getElementById('vcLbl').style.color=bxC;
-    // Luma bar
-    document.getElementById('lBar').style.width=(luma/255*100)+'%';
-
-    // 5. Ring buffer
-    ring.push({t:ts,v:luma});
-    if(ring.length>RING_MAX)ring.shift();
-
-    // 6. Running min/max (true extremes, very slow decay)
-    if(luma<ringMin)ringMin=luma;
-    if(luma>ringMax)ringMax=luma;
-    ringMin=ringMin*0.9997+luma*0.0003;
-    ringMax=ringMax*0.9997+luma*0.0003;
-    ringMin=Math.max(0,ringMin);ringMax=Math.min(255,ringMax);
-    if(ringMax-ringMin<10)ringMax=ringMin+10;
-    const threshold=(ringMin+ringMax)/2;
-
-    // 7. UI (throttled)
-    if(rxFrameN%4===0){
-      document.getElementById('lVal').textContent=luma.toFixed(0);
-      document.getElementById('lMin').textContent=ringMin.toFixed(0);
-      document.getElementById('lMax').textContent=ringMax.toFixed(0);
-      document.getElementById('lTh').textContent=threshold.toFixed(0);
-    }
-
-    const Tb=Math.max(150,parseInt(document.getElementById('rTb').value)||300);
-
-    // 8. Bit window processing
-    if(rxState==='HUNT'){
-      if(huntClock===0)huntClock=ts;
-      while(ts-huntClock>=Tb){
-        const wS=huntClock,wE=huntClock+Tb;
-        huntClock=wE; // advance anchor by exactly Tb
-        const ws=ring.filter(s=>s.t>=wS&&s.t<wE);
-        document.getElementById('lSpb').textContent=ws.length;
-        if(ws.length===0)continue;
-        const avg=ws.reduce((a,s)=>a+s.v,0)/ws.length;
-        const bit=avg>threshold?1:0;
-        // Track clock history (end-timestamp of each bit window)
-        huntClockHistory.push(wE);
-        if(huntClockHistory.length>80)huntClockHistory.shift();
-        huntBits.push(bit);
-        if(huntBits.length>80)huntBits.shift();
-        dispBits.push(bit);
-        if(dispBits.length>80)dispBits.shift();
-        graphPts.push({y:avg,bit,th:threshold,state:'H'});
-        if(graphPts.length>120)graphPts.shift();
-        document.getElementById('rCnt').textContent=dispBits.length;
-        renderBits();drawGraph();
-
-        // Fuzzy preamble search (≤2 bit errors)
-        const hStr=huntBits.join('');
-        let bI=-1,bE=99;
-        for(let i=0;i+PRE_LEN<=hStr.length;i++){
-          const e=hamming(hStr.slice(i,i+PRE_LEN),PRE);
-          if(e<bE){bE=e;bI=i;}
-        }
-        if(bE<=2){
-          // ── PREAMBLE FOUND ─────────────────────────────────────────────
-          // bitsAfterPre = how many bits in huntBits come AFTER the preamble
-          const bitsAfterPre=huntBits.length-(bI+PRE_LEN);
-          const histLen=huntClockHistory.length;
-          // lockBitStart = end of preamble's last bit = start of first payload window
-          // huntClockHistory[histLen-1] = end of the most recently committed bit
-          // Step back bitsAfterPre entries to find end of preamble's last bit
-          lockBitStart=huntClockHistory[histLen-1-bitsAfterPre];
-          lockBitIdx=0;
-          payBits=[];
-          expectedPayLen=-1;
-          // ─────────────────────────────────────────────────────────────────
-          // CRITICAL FIX: Do NOT replay extraBits here.
-          // Setting lockBitIdx=0 and payBits=[] means COLLECT will re-read
-          // ALL windows from the ring buffer starting at lockBitStart.
-          // This correctly re-samples the gap+length+payload without any
-          // clock misalignment from replayed bits.
-          // ─────────────────────────────────────────────────────────────────
-          rxState='COLLECT';
-          huntBits=[];huntClockHistory=[];
-          document.getElementById('rState').textContent='LOCKED';
-          setRxSt('bpre','LOCKED');showBanner();
-          rlog(`⚡ PREAMBLE LOCKED (err=${bE}) — reading header…`,'pre');
-        }
-      }
-    } else {
-      // COLLECT: hard-anchored absolute clock from lockBitStart
-      while(lockBitStart+(lockBitIdx+1)*Tb<=ts){
-        const wS=lockBitStart+lockBitIdx*Tb;
-        const wE=lockBitStart+(lockBitIdx+1)*Tb;
-        const ws=ring.filter(s=>s.t>=wS&&s.t<wE);
-        document.getElementById('lSpb').textContent=ws.length;
-        const avg=ws.length>0
-          ?ws.reduce((a,s)=>a+s.v,0)/ws.length
-          :(ringMin+ringMax)/2;
-        const bit=avg>threshold?1:0;
-        payBits.push(bit);lockBitIdx++;
-        dispBits.push(bit);
-        if(dispBits.length>80)dispBits.shift();
-        graphPts.push({y:avg,bit,th:threshold,state:'R'});
-        if(graphPts.length>120)graphPts.shift();
-        document.getElementById('rCnt').textContent=dispBits.length;
-        renderBits();drawGraph();
-
-        // Parse length header once we have GAP_BITS + 16 bits
-        const hdrBits=GAP_BITS+16;
-        if(expectedPayLen<0&&payBits.length>=hdrBits){
-          const lenStr=payBits.slice(GAP_BITS,hdrBits).join('');
-          const lH=parseInt(lenStr.slice(0,8),2);
-          const lL=parseInt(lenStr.slice(8,16),2);
-          expectedPayLen=(lH<<8)|lL;
-          rlog(`Header: ${expectedPayLen} bits = ${Math.floor(expectedPayLen/8)} chars`,'pre');
-          if(expectedPayLen<8||expectedPayLen>4096){
-            rlog(`⚠ Bad length ${expectedPayLen} — resetting`,'warn');
-            backToHunt();return;
-          }
-        }
-
-        // Decode once we have all payload bits
-        if(expectedPayLen>0){
-          const need=GAP_BITS+16+expectedPayLen;
-          if(payBits.length>=need){
-            const payloadBits=payBits.slice(GAP_BITS+16,need).join('');
-            decodeAndShow(payloadBits);
-            return;
-          }
-        }
-
-        // Safety reset
-        if(payBits.length>4096+GAP_BITS+16+32){
-          rlog('⚠ Overflow — resetting','warn');
-          backToHunt();return;
-        }
-      }
-    }
+    });
   }
-  requestAnimationFrame(frame);
-}
 
-function decodeAndShow(bits){
-  const txt=b2t(bits);
-  const printable=[...txt].filter(c=>c!=='?').length;
-  const isText=txt.length>0&&printable>=txt.length*0.6;
-  rxPktN++;
-  document.getElementById('rPkts').textContent=rxPktN;
-  rlog(`✓ PKT#${rxPktN}: "${isText?txt:'[binary]'}" (${bits.length} bits)`,'ok');
-  document.getElementById('rResult').innerHTML=`
-    <div class="result">
-      <div class="rl">✓ DECODED — PKT #${rxPktN}</div>
-      ${isText?`<div class="rt">${esc(txt)}</div>`:''}
-      <div class="rb">${bits}</div>
-      <div class="rm">Bits:${bits.length} | Bytes:${Math.floor(bits.length/8)} | Pkt #${rxPktN}</div>
-    </div>`;
-  backToHunt();
-  rlog('Hunting for next preamble…');
-}
+  // ============================================================
+  //  ████████  SENDER MODULE  ████████
+  // ============================================================
+  function setupSender() {
+    // DOM refs
+    const senderInput    = $("sender-input");
+    const charCountEl    = $("char-count");
+    const binaryDisplay  = $("binary-display");
+    const frameData      = $("frame-data");
+    const btnConvert     = $("btn-convert");
+    const btnTransmit    = $("btn-transmit");
+    const indicatorWrap  = $("flashlight-indicator");
+    const indicatorState = $("indicator-state");
+    const progressWrap   = $("progress-wrap");
+    const progressFill   = $("progress-fill");
+    const progressBit    = $("progress-bit");
+    const progressPct    = $("progress-pct");
+    const screenFlash    = $("screen-flash");
 
-function backToHunt(){
-  rxState='HUNT';huntClock=0;huntBits=[];huntClockHistory=[];
-  payBits=[];expectedPayLen=-1;
-  hideBanner();setRxSt('ba','HUNTING');
-  document.getElementById('rState').textContent='HUNT';
-}
+    let txActive = false;
+    let torchStream = null;
+    let torchTrack = null;
+    let useTorch = false;
 
-function renderBits(){
-  const el=document.getElementById('rBits');
-  if(!dispBits.length){el.innerHTML='–';return;}
-  el.innerHTML=dispBits.map(b=>`<span class="b${b}">${b}</span>`).join('');
-}
+    function setIndicatorState(label, isOn) {
+      if (indicatorWrap) indicatorWrap.classList.toggle("indicator-on", isOn);
+      if (indicatorState) {
+        indicatorState.textContent = label;
+        indicatorState.style.color = isOn ? "var(--amber)" : "var(--text-dim)";
+      }
+    }
 
-function drawGraph(){
-  const cv=document.getElementById('gc');
-  if(!cv._w){cv.width=cv.offsetWidth||460;cv._w=true;}
-  const ctx=cv.getContext('2d');
-  const W=cv.width,H=cv.height||68;
-  ctx.fillStyle='#020c14';ctx.fillRect(0,0,W,H);
-  const n=graphPts.length;if(n<2)return;
-  const span=ringMax-ringMin||10;
-  const ny=v=>H-Math.max(0,Math.min(1,(v-ringMin)/span))*H;
-  const thY=ny(graphPts[n-1].th);
-  ctx.strokeStyle='rgba(255,107,53,.6)';ctx.lineWidth=1;ctx.setLineDash([4,3]);
-  ctx.beginPath();ctx.moveTo(0,thY);ctx.lineTo(W,thY);ctx.stroke();ctx.setLineDash([]);
-  ctx.strokeStyle='#00d4ff';ctx.lineWidth=1.5;ctx.beginPath();
-  graphPts.forEach((p,i)=>{const x=(i/(n-1))*W,y=ny(p.y);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
-  ctx.stroke();
-  graphPts.forEach((p,i)=>{
-    const x=(i/(n-1))*W,y=ny(p.y),isR=p.state==='R';
-    ctx.fillStyle=p.bit===1?(isR?'#00ff9d':'rgba(0,255,157,.35)'):(isR?'#ff6b35':'rgba(255,107,53,.25)');
-    ctx.beginPath();ctx.arc(x,y,isR?3.5:2,0,Math.PI*2);ctx.fill();
-  });
-  ctx.font='9px Share Tech Mono';
-  ctx.fillStyle=rxState==='HUNT'?'rgba(0,212,255,.8)':'rgba(255,224,102,.95)';
-  ctx.fillText(rxState,4,11);
-  ctx.fillStyle='rgba(255,107,53,.6)';
-  ctx.fillText('─ THRESH',4,22);
-}
+    function hideScreenFlash() {
+      if (!screenFlash) return;
+      screenFlash.classList.add("hidden");
+      screenFlash.classList.remove("on", "off");
+    }
 
-window.addEventListener('resize',()=>{const cv=document.getElementById('gc');if(cv)cv._w=false;});
-</script>
+    async function initTorch() {
+      // Default: screen fallback
+      useTorch = false;
+
+      if (!navigator.mediaDevices?.getUserMedia) {
+        log("tx-log", "Camera API unavailable → screen fallback", "err");
+        return;
+      }
+
+      try {
+        torchStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" }
+        });
+        torchTrack = torchStream.getVideoTracks()[0];
+
+        const caps = torchTrack.getCapabilities?.() || {};
+        if (caps.torch) {
+          useTorch = true;
+          log("tx-log", "Hardware torch detected ✓", "ok");
+        } else {
+          useTorch = false;
+          log("tx-log", "Torch not supported → screen fallback", "info");
+          torchTrack.stop();
+          torchTrack = null;
+          torchStream = null;
+        }
+      } catch (err) {
+        useTorch = false;
+        log("tx-log", `Camera unavailable: ${err?.message || err} → screen fallback`, "err");
+      }
+    }
+
+    async function setLight(on) {
+      if (useTorch && torchTrack) {
+        try {
+          await torchTrack.applyConstraints({ advanced: [{ torch: !!on }] });
+          return;
+        } catch {
+          // Torch failed mid-flight — fall back to screen for this bit
+          useTorch = false;
+          log("tx-log", "Torch constraint failed → screen fallback", "err");
+        }
+      }
+
+      if (!screenFlash) return;
+
+      // Screen modulation fallback: white for 1, black for 0
+      screenFlash.classList.remove("hidden", "on", "off");
+      screenFlash.classList.add(on ? "on" : "off");
+    }
+
+    async function transmitFrame(frame) {
+      const total = frame.length;
+
+      for (let i = 0; i < total; i++) {
+        const bit = frame[i];
+        const isOn = bit === "1";
+
+        await setLight(isOn);
+        setIndicatorState(isOn ? "1 — LIGHT ON" : "0 — LIGHT OFF", isOn);
+
+        const pct = Math.round(((i + 1) / total) * 100);
+        if (progressFill) progressFill.style.width = `${pct}%`;
+        safeText(progressBit, `BIT ${i + 1}/${total}`);
+        safeText(progressPct, `${pct}%`);
+
+        await sleep(BIT_RATE_MS);
+      }
+    }
+
+    // Live char counter
+    senderInput?.addEventListener("input", () => {
+      safeText(charCountEl, String(senderInput.value.length));
+    });
+
+    // Encode
+    btnConvert?.addEventListener("click", () => {
+      const text = (senderInput?.value || "").trim();
+      if (!text) {
+        log("tx-log", "Type a message first.", "err");
+        return;
+      }
+
+      const binary = textToBinary(text);
+
+      if (binaryDisplay) {
+        binaryDisplay.innerHTML = binary.split("").map((b) =>
+          `<span class="bit-${b}">${b}</span>`
+        ).join("");
+      }
+
+      if (frameData) {
+        frameData.textContent = binary;
+        frameData.classList.remove("dim");
+      }
+
+      if (btnTransmit) btnTransmit.disabled = false;
+      log("tx-log", `Encoded "${text}" → ${binary.length} bits`, "info");
+    });
+
+    // Transmit
+    btnTransmit?.addEventListener("click", async () => {
+      if (txActive) return;
+
+      const binary = frameData?.textContent || "";
+      if (!binary || binary === "—") {
+        log("tx-log", "Nothing to transmit. Encode a message first.", "err");
+        return;
+      }
+
+      await initTorch();
+
+      const fullFrame = PREAMBLE + binary + POSTAMBLE;
+      log("tx-log", `Frame: ${fullFrame.length} bits total`, "info");
+      log("tx-log", "Transmitting...", "tx");
+
+      txActive = true;
+      if (btnTransmit) btnTransmit.disabled = true;
+      if (btnConvert) btnConvert.disabled = true;
+      progressWrap?.classList.remove("hidden");
+      setSignal("busy", "TRANSMITTING");
+
+      try {
+        await transmitFrame(fullFrame);
+      } finally {
+        txActive = false;
+        if (btnTransmit) btnTransmit.disabled = false;
+        if (btnConvert) btnConvert.disabled = false;
+
+        // Turn off the light and restore UI visibility
+        await setLight(false);
+        setIndicatorState("STANDBY", false);
+        setSignal("idle", "IDLE");
+        log("tx-log", "Transmission complete.", "ok");
+
+        // Hide screen flash overlay after transmit (usability)
+        if (!useTorch) hideScreenFlash();
+
+        // Release torch track if we used it
+        if (torchTrack) {
+          torchTrack.stop();
+          torchTrack = null;
+        }
+        if (torchStream) {
+          torchStream.getTracks().forEach((t) => t.stop());
+          torchStream = null;
+        }
+      }
+    });
+  }
+
+  // ============================================================
+  //  ████████  RECEIVER MODULE  ████████
+  // ============================================================
+  function setupReceiver() {
+    const rxVideo       = $("receiver-video");
+    const hiddenCanvas  = $("hidden-canvas");
+    const graphCanvas   = $("graph-canvas");
+    const btnRxStart    = $("btn-rx-start");
+    const btnRxStop     = $("btn-rx-stop");
+    const btnCalibrate  = $("btn-calibrate");
+    const reticleBox    = $("reticle-box");
+    const rxStateBadge  = $("rx-state-badge");
+    const statThreshold = $("stat-threshold");
+    const statCurrent   = $("stat-current");
+    const statStateEl   = $("stat-state");
+    const statBitsEl    = $("stat-bits");
+    const bitBufferEl   = $("bit-buffer");
+    const decodedOutput = $("decoded-output");
+
+    const graphCtx  = graphCanvas?.getContext?.("2d") || null;
+    const hiddenCtx = hiddenCanvas?.getContext?.("2d", { willReadFrequently: true }) || null;
+
+    let rxStream       = null;
+    let rxAnimFrame    = null;
+    let threshold      = 128;
+    let ambientBase    = 0;
+    let rxBitBuffer    = [];
+    let preambleWindow = [];
+    let graphData      = [];
+    let rxLoopActive   = false;
+    let sampleInterval = null;
+    let currentBrightness = 0;
+
+    const GREEN = cssVar("--green", "#39ff14");
+
+    function setRxState(newState) {
+      rxState = newState;
+
+      if (rxStateBadge) {
+        rxStateBadge.className = `rx-state-badge ${newState.toLowerCase()}`.trim();
+        rxStateBadge.textContent = newState;
+      }
+      safeText(statStateEl, newState);
+
+      reticleBox?.classList.remove("scanning", "locked");
+      if (newState === "SCANNING") reticleBox?.classList.add("scanning");
+      if (newState === "READING")  reticleBox?.classList.add("locked");
+    }
+
+    function resizeGraphCanvas() {
+      if (!graphCanvas) return;
+      const rect = graphCanvas.getBoundingClientRect();
+      graphCanvas.width  = rect.width  || 400;
+      graphCanvas.height = rect.height || 120;
+    }
+    window.addEventListener("resize", resizeGraphCanvas);
+    resizeGraphCanvas();
+
+    function updateBitBufferUI(bits, mode) {
+      if (!bitBufferEl) return;
+      if (!bits.length) {
+        bitBufferEl.innerHTML = '<span class="dim">—</span>';
+        return;
+      }
+      bitBufferEl.innerHTML = bits.map((b) => {
+        let cls = b === "1" ? "b1" : "b0";
+        if (mode === "preamble") cls = "preamble-bit";
+        return `<span class="${cls}">${b}</span>`;
+      }).join("");
+    }
+
+    function safeExtractRoiBrightness() {
+      if (!hiddenCanvas || !hiddenCtx || !rxVideo) return 0;
+
+      const W = hiddenCanvas.width;
+      const H = hiddenCanvas.height;
+      if (!W || !H) return 0;
+
+      try {
+        hiddenCtx.drawImage(rxVideo, 0, 0, W, H);
+
+        const roiX = Math.floor((W - ROI_SIZE) / 2);
+        const roiY = Math.floor((H - ROI_SIZE) / 2);
+
+        const imageData = hiddenCtx.getImageData(roiX, roiY, ROI_SIZE, ROI_SIZE);
+        const px = imageData.data;
+
+        let total = 0;
+        const n = ROI_SIZE * ROI_SIZE;
+
+        for (let i = 0; i < px.length; i += 4) {
+          const r = px[i];
+          const g = px[i + 1];
+          const b = px[i + 2];
+          total += 0.299 * r + 0.587 * g + 0.114 * b;
+        }
+        return total / n;
+      } catch {
+        return 0;
+      }
+    }
+
+    function drawGraph() {
+      if (!graphCanvas || !graphCtx) return;
+
+      const W = graphCanvas.width;
+      const H = graphCanvas.height;
+      graphCtx.clearRect(0, 0, W, H);
+
+      // Background
+      graphCtx.fillStyle = "#0d1117";
+      graphCtx.fillRect(0, 0, W, H);
+
+      if (graphData.length < 2) return;
+
+      const xStep = W / (GRAPH_HISTORY - 1);
+
+      const t = clamp(threshold, 0, 255);
+      const threshY = H - (t / 255) * H;
+
+      // Threshold line
+      graphCtx.setLineDash([4, 4]);
+      graphCtx.strokeStyle = "rgba(245,166,35,0.5)";
+      graphCtx.lineWidth = 1;
+      graphCtx.beginPath();
+      graphCtx.moveTo(0, threshY);
+      graphCtx.lineTo(W, threshY);
+      graphCtx.stroke();
+      graphCtx.setLineDash([]);
+
+      // Label
+      graphCtx.fillStyle = "rgba(245,166,35,0.6)";
+      graphCtx.font = "9px 'Share Tech Mono'";
+      graphCtx.fillText(`T=${Math.round(t)}`, 4, Math.max(10, threshY - 3));
+
+      // Fill under curve
+      graphCtx.beginPath();
+      graphCtx.moveTo(0, H);
+      for (let i = 0; i < graphData.length; i++) {
+        const x = i * xStep;
+        const y = H - (clamp(graphData[i], 0, 255) / 255) * H;
+        graphCtx.lineTo(x, y);
+      }
+      graphCtx.lineTo((graphData.length - 1) * xStep, H);
+      graphCtx.closePath();
+
+      const stop = clamp(t / 255, 0, 1);
+      const grad = graphCtx.createLinearGradient(0, 0, 0, H);
+      grad.addColorStop(0, "rgba(57,255,20,0.25)");
+      grad.addColorStop(stop, "rgba(57,255,20,0.08)");
+      grad.addColorStop(1, "rgba(0,0,0,0)");
+      graphCtx.fillStyle = grad;
+      graphCtx.fill();
+
+      // Line
+      graphCtx.beginPath();
+      graphCtx.lineWidth = 1.5;
+      graphCtx.strokeStyle = "rgba(57,255,20,0.9)";
+      for (let i = 0; i < graphData.length; i++) {
+        const x = i * xStep;
+        const y = H - (clamp(graphData[i], 0, 255) / 255) * H;
+        if (i === 0) graphCtx.moveTo(x, y);
+        else graphCtx.lineTo(x, y);
+      }
+      graphCtx.stroke();
+
+      // Dot
+      const last = clamp(graphData[graphData.length - 1], 0, 255);
+      const dotX = (graphData.length - 1) * xStep;
+      const dotY = H - (last / 255) * H;
+
+      graphCtx.beginPath();
+      graphCtx.arc(dotX, dotY, 3, 0, Math.PI * 2);
+      graphCtx.fillStyle = last > t ? GREEN : "rgba(57,255,20,0.4)";
+      graphCtx.shadowColor = "rgba(57,255,20,0.8)";
+      graphCtx.shadowBlur = last > t ? 8 : 0;
+      graphCtx.fill();
+      graphCtx.shadowBlur = 0;
+    }
+
+    function startBrightnessLoop() {
+      rxLoopActive = true;
+
+      const loop = () => {
+        if (!rxLoopActive) return;
+
+        if (rxVideo && rxVideo.readyState >= 2) {
+          currentBrightness = safeExtractRoiBrightness();
+
+          safeText(statCurrent, String(Math.round(currentBrightness)));
+
+          graphData.push(currentBrightness);
+          if (graphData.length > GRAPH_HISTORY) graphData.shift();
+
+          drawGraph();
+        }
+
+        rxAnimFrame = requestAnimationFrame(loop);
+      };
+
+      loop();
+    }
+
+    async function runCalibration() {
+      setRxState("CALIBRATING");
+      log("rx-log", `Calibrating for ${CALIB_DURATION_MS}ms...`, "info");
+
+      const samples = [];
+      const start = Date.now();
+
+      while (Date.now() - start < CALIB_DURATION_MS) {
+        if (rxVideo && rxVideo.readyState >= 2) {
+          samples.push(safeExtractRoiBrightness());
+        }
+        await sleep(50);
+      }
+
+      if (!samples.length) {
+        // If video wasn't ready, fall back to current reading.
+        samples.push(currentBrightness || 0);
+      }
+
+      ambientBase = samples.reduce((a, b) => a + b, 0) / samples.length;
+      threshold = clamp(ambientBase + THRESHOLD_OFFSET, 0, 255);
+
+      safeText(statThreshold, String(Math.round(threshold)));
+      log("rx-log", `Ambient: ${Math.round(ambientBase)}, Threshold: ${Math.round(threshold)}`, "ok");
+    }
+
+    function decodePayload(bits) {
+      const text = binaryToText(bits);
+      log("rx-log", `Decoded: "${text}"`, "ok");
+
+      if (decodedOutput) {
+        decodedOutput.textContent = text;
+        decodedOutput.classList.add("flash");
+        setTimeout(() => decodedOutput.classList.remove("flash"), 1000);
+      }
+      setSignal("active", "MSG RX");
+    }
+
+    function processBit(bit) {
+      safeText(statBitsEl, String(rxBitBuffer.length));
+
+      preambleWindow.push(bit);
+      if (preambleWindow.length > PREAMBLE.length) preambleWindow.shift();
+
+      if (rxState === "SCANNING") {
+        updateBitBufferUI([...preambleWindow], "preamble");
+
+        const windowStr = preambleWindow.join("");
+        if (windowStr === PREAMBLE) {
+          log("rx-log", `Preamble detected! [${PREAMBLE}]`, "ok");
+          setRxState("READING");
+          rxBitBuffer = [];
+          preambleWindow = [];
+          reticleBox?.classList.add("locked");
+        }
+        return;
+      }
+
+      if (rxState === "READING") {
+        rxBitBuffer.push(bit);
+        safeText(statBitsEl, String(rxBitBuffer.length));
+        updateBitBufferUI(rxBitBuffer, "data");
+
+        if (rxBitBuffer.length >= POSTAMBLE.length) {
+          const tail = rxBitBuffer.slice(-POSTAMBLE.length).join("");
+          if (tail === POSTAMBLE) {
+            const payloadBits = rxBitBuffer.slice(0, rxBitBuffer.length - POSTAMBLE.length).join("");
+
+            log("rx-log", `Postamble detected! Payload: ${payloadBits.length} bits`, "ok");
+            decodePayload(payloadBits);
+
+            setRxState("DONE");
+            setTimeout(() => {
+              rxBitBuffer = [];
+              preambleWindow = [];
+              reticleBox?.classList.remove("locked");
+              setRxState("SCANNING");
+              log("rx-log", "Scanning for next message...", "info");
+            }, 2000);
+          }
+        }
+        return;
+      }
+    }
+
+    function startBitSampler() {
+      clearInterval(sampleInterval);
+
+      sampleInterval = setInterval(() => {
+        if (rxState === "IDLE" || rxState === "CALIBRATING") return;
+
+        const brightness = currentBrightness;
+        const t = clamp(threshold, 0, 255);
+        const bit = brightness > t ? "1" : "0";
+
+        // Ambient drift correction: adjust baseline slowly when we're seeing "0" in scanning mode.
+        if (rxState === "SCANNING" && bit === "0") {
+          ambientBase = EMA_ALPHA * brightness + (1 - EMA_ALPHA) * ambientBase;
+          threshold = clamp(ambientBase + THRESHOLD_OFFSET, 0, 255);
+          safeText(statThreshold, String(Math.round(threshold)));
+        }
+
+        processBit(bit);
+      }, BIT_RATE_MS);
+    }
+
+    async function startReceiver() {
+      log("rx-log", "Requesting camera access...", "info");
+
+      if (!navigator.mediaDevices?.getUserMedia) {
+        log("rx-log", "Camera API unavailable in this browser.", "err");
+        setSignal("error", "NO CAM");
+        return;
+      }
+
+      try {
+        rxStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: "environment",
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        });
+      } catch (err) {
+        log("rx-log", `Camera error: ${err?.message || err}`, "err");
+        setSignal("error", "NO CAM");
+        return;
+      }
+
+      if (!rxVideo) return;
+
+      rxVideo.srcObject = rxStream;
+
+      // Some browsers need explicit play()
+      try { await rxVideo.play(); } catch { /* ignore */ }
+
+      await new Promise((resolve) => {
+        if (rxVideo.readyState >= 2) return resolve();
+        rxVideo.onloadedmetadata = () => resolve();
+      });
+
+      if (hiddenCanvas) {
+        hiddenCanvas.width  = rxVideo.videoWidth  || 640;
+        hiddenCanvas.height = rxVideo.videoHeight || 480;
+      }
+
+      btnRxStart?.classList.add("hidden");
+      btnRxStop?.classList.remove("hidden");
+      setSignal("active", "RX LIVE");
+      log("rx-log", `Camera started: ${hiddenCanvas?.width || "?"}×${hiddenCanvas?.height || "?"}`, "ok");
+
+      startBrightnessLoop();
+      await runCalibration();
+
+      setRxState("SCANNING");
+      startBitSampler();
+    }
+
+    function stopReceiver() {
+      clearInterval(sampleInterval);
+      cancelAnimationFrame(rxAnimFrame);
+      rxLoopActive = false;
+
+      if (rxStream) {
+        rxStream.getTracks().forEach((t) => t.stop());
+        rxStream = null;
+      }
+      if (rxVideo) rxVideo.srcObject = null;
+
+      rxBitBuffer = [];
+      preambleWindow = [];
+      graphData = [];
+      currentBrightness = 0;
+
+      btnRxStart?.classList.remove("hidden");
+      btnRxStop?.classList.add("hidden");
+      setSignal("idle", "IDLE");
+      log("rx-log", "Receiver stopped.", "info");
+
+      setRxState("IDLE");
+    }
+
+    // Wire UI
+    btnRxStart?.addEventListener("click", async () => {
+      if (rxState !== "IDLE") return;
+      await startReceiver();
+    });
+
+    btnRxStop?.addEventListener("click", stopReceiver);
+
+    btnCalibrate?.addEventListener("click", async () => {
+      if (rxState === "SCANNING" || rxState === "READING") {
+        await runCalibration();
+      } else {
+        log("rx-log", "Start the receiver first, then calibrate.", "err");
+      }
+    });
+
+    // Pause camera loops when tab is hidden (mobile battery saver)
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden && rxState !== "IDLE") {
+        // keep the camera stream running, but pause the animation loop
+        rxLoopActive = false;
+      } else if (!document.hidden && rxState !== "IDLE" && !rxLoopActive) {
+        startBrightnessLoop();
+      }
+    });
+
+    return { stopReceiver };
+  }
+
+  // ============================================================
+  //  INIT
+  // ============================================================
+  function init() {
+    bootSequence();
+
+    setupSender();
+    const receiver = setupReceiver();
+    setupModeSwitching(receiver?.stopReceiver);
+
+    // Initial signal state
+    setSignal("idle", "IDLE");
+
+    // Friendly no-JS fallback message handled in HTML <noscript>
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init, { once: true });
+  } else {
+    init();
+  }
+})();
+  </script>
 </body>
 </html>
