@@ -1,401 +1,1035 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>UFlash Sprint 1 (Web)</title>
-  <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 16px; }
-    .row { display: flex; gap: 12px; flex-wrap: wrap; }
-    .card { border: 1px solid #ddd; border-radius: 12px; padding: 12px; max-width: 620px; flex: 1; min-width: 300px; }
-    label { display:block; font-size: 13px; margin-top: 10px; color: #333; }
-    input, textarea, select, button { font-size: 16px; padding: 8px; width: 100%; box-sizing: border-box; }
-    button { cursor: pointer; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
-    .small { font-size: 12px; color: #555; }
-    .ok { color: #0a7; }
-    .bad { color: #c22; }
-    video { width: 100%; border-radius: 12px; background: #000; }
-    .flashScreen { position: fixed; inset: 0; display:none; z-index: 9999; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>U-Flash · Underwater Optical Comm</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #020c14;
+    --surface: #041824;
+    --card: #071f2e;
+    --border: #0e4a6e;
+    --accent: #00d4ff;
+    --accent2: #00ff9d;
+    --warn: #ff6b35;
+    --text: #c8e8f8;
+    --muted: #4a7a99;
+    --glow: 0 0 20px rgba(0,212,255,0.3);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* animated background */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background: 
+      radial-gradient(ellipse at 20% 80%, rgba(0,100,160,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(0,212,255,0.07) 0%, transparent 50%);
+    animation: bgPulse 8s ease-in-out infinite alternate;
+    pointer-events: none;
+  }
+  @keyframes bgPulse {
+    from { opacity: 0.6; }
+    to { opacity: 1; }
+  }
+
+  /* floating particles */
+  .particles {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+  }
+  .particle {
+    position: absolute;
+    width: 2px; height: 2px;
+    background: var(--accent);
+    border-radius: 50%;
+    opacity: 0;
+    animation: float linear infinite;
+  }
+  @keyframes float {
+    0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+    10% { opacity: 0.6; }
+    90% { opacity: 0.3; }
+    100% { transform: translateY(-10vh) translateX(var(--dx,20px)); opacity: 0; }
+  }
+
+  .app {
+    position: relative; z-index: 1;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 16px;
+    min-height: 100vh;
+  }
+
+  header {
+    text-align: center;
+    padding: 20px 0 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+  header h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: var(--accent);
+    text-shadow: var(--glow);
+    letter-spacing: 0.05em;
+  }
+  header p {
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 4px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  /* mode selector */
+  .mode-tabs {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .mode-tab {
+    flex: 1;
+    padding: 12px;
+    background: var(--card);
+    border: none;
+    color: var(--muted);
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  .mode-tab.active {
+    background: var(--accent);
+    color: var(--bg);
+    text-shadow: none;
+  }
+  .mode-tab:not(.active):hover { background: var(--surface); color: var(--text); }
+
+  /* panels */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* cards */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 14px;
+    position: relative;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.5;
+  }
+  .card-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.65rem;
+    color: var(--accent);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  label {
+    display: block;
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    margin-top: 10px;
+  }
+  label:first-of-type { margin-top: 0; }
+
+  input[type="text"], input[type="number"], textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--accent2);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.9rem;
+    padding: 8px 10px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus, textarea:focus { border-color: var(--accent); box-shadow: var(--glow); }
+  textarea { resize: vertical; min-height: 60px; }
+
+  .row2 { display: flex; gap: 10px; }
+  .row2 > * { flex: 1; }
+
+  /* buttons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 10px 16px;
+    border: none; border-radius: 5px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.08em;
+    width: 100%;
+    margin-top: 6px;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .btn-primary:hover:not(:disabled) { background: #33ddff; box-shadow: var(--glow); }
+  .btn-success {
+    background: var(--accent2);
+    color: var(--bg);
+  }
+  .btn-success:hover:not(:disabled) { background: #33ffb8; }
+  .btn-warn {
+    background: var(--warn);
+    color: #fff;
+  }
+  .btn-warn:hover:not(:disabled) { background: #ff8555; }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .btn-outline:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-row { display: flex; gap: 8px; }
+  .btn-row .btn { flex: 1; }
+
+  /* status badge */
+  .status-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    padding: 3px 8px;
+    border-radius: 3px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .status-idle { background: rgba(74,122,153,0.2); color: var(--muted); border: 1px solid var(--border); }
+  .status-sending { background: rgba(255,107,53,0.2); color: var(--warn); border: 1px solid var(--warn); animation: blink 0.5s step-end infinite; }
+  .status-ok { background: rgba(0,255,157,0.15); color: var(--accent2); border: 1px solid var(--accent2); }
+  .status-active { background: rgba(0,212,255,0.15); color: var(--accent); border: 1px solid var(--accent); }
+  @keyframes blink { 50% { opacity: 0.4; } }
+
+  /* progress bar */
+  .progress-wrap {
+    height: 6px;
+    background: var(--bg);
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    margin: 8px 0;
+  }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 3px;
+    width: 0%;
+    transition: width 0.1s;
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  /* camera / video */
+  #videoEl {
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: #000;
+    display: block;
+    max-height: 200px;
+    object-fit: cover;
+  }
+  #debugCanvas {
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: #000;
+    display: block;
+    margin-top: 8px;
+    height: 80px;
+  }
+
+  /* luma meter */
+  .luma-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 8px 0;
+  }
+  .luma-label { font-size: 0.65rem; color: var(--muted); white-space: nowrap; }
+  .luma-bar-wrap {
+    flex: 1;
+    height: 14px;
+    background: var(--bg);
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .luma-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #003f5c, var(--accent));
+    width: 0%;
+    transition: width 0.08s;
+  }
+  .luma-val { font-size: 0.75rem; color: var(--accent2); min-width: 36px; text-align: right; }
+
+  /* decoded bits display */
+  .bit-display {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    word-break: break-all;
+    color: var(--muted);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 10px;
+    min-height: 40px;
+    line-height: 1.6;
+  }
+  .bit-1 { color: var(--accent2); }
+  .bit-0 { color: var(--muted); }
+  .bit-pre { color: var(--accent); }
+
+  /* result box */
+  .result-box {
+    background: rgba(0,255,157,0.05);
+    border: 1px solid var(--accent2);
+    border-radius: 6px;
+    padding: 12px;
+    margin-top: 10px;
+  }
+  .result-box .result-label {
+    font-size: 0.6rem;
+    color: var(--accent2);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .result-box .result-payload {
+    font-size: 1rem;
+    color: var(--accent2);
+    word-break: break-all;
+    letter-spacing: 0.1em;
+  }
+
+  /* log */
+  .log {
+    font-size: 0.65rem;
+    color: var(--muted);
+    max-height: 80px;
+    overflow-y: auto;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 8px;
+    line-height: 1.7;
+  }
+  .log .le { color: var(--warn); }
+  .log .ls { color: var(--accent); }
+
+  /* flash overlay */
+  #flashOverlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 9999;
+    background: white;
+  }
+
+  /* tooltip / helper */
+  .helper {
+    font-size: 0.62rem;
+    color: var(--muted);
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+
+  /* section divider */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 12px 0;
+    opacity: 0.5;
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
 </head>
 <body>
-  <h2>UFlash Sprint 1 (Website)</h2>
-  <p class="small">
-    Needs <b>HTTPS</b> (or localhost) for camera access.
-    Torch control via web works mainly on some <b>Android Chrome</b>; iOS often won’t support torch, so sender falls back to screen flashing.
-  </p>
 
-  <div class="row">
+<!-- Particles -->
+<div class="particles" id="particles"></div>
+
+<!-- Flash overlay for screen-flash fallback -->
+<div id="flashOverlay"></div>
+
+<div class="app">
+  <header>
+    <h1>U-FLASH</h1>
+    <p>Underwater Optical Communication · Sprint-1</p>
+  </header>
+
+  <!-- Mode Tabs -->
+  <div class="mode-tabs">
+    <button class="mode-tab active" onclick="setMode('sender')">⚡ Sender</button>
+    <button class="mode-tab" onclick="setMode('receiver')">📡 Receiver</button>
+  </div>
+
+  <!-- ==================== SENDER PANEL ==================== -->
+  <div class="panel active" id="senderPanel">
+
     <div class="card">
-      <h3>Mode</h3>
-      <select id="mode">
-        <option value="sender">Sender (Torch/Screen)</option>
-        <option value="receiver">Receiver (Camera)</option>
-      </select>
-      <p class="small">Open this page on <b>two phones</b>: one sender, one receiver.</p>
+      <div class="card-title">Transmission Config</div>
+
+      <label>Payload Bits</label>
+      <textarea id="sPayload" placeholder="e.g. 1010110100101101">1010110100101101</textarea>
+      <div class="helper">Binary string. Will be padded/truncated to match bit count.</div>
+
+      <div class="row2" style="margin-top:10px;">
+        <div>
+          <label>Bit Duration Tb (ms)</label>
+          <input type="number" id="sTb" value="200" min="50" max="2000" step="10">
+        </div>
+        <div>
+          <label>Repetitions</label>
+          <input type="number" id="sRep" value="1" min="1" max="5">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Packet Preview</div>
+      <div class="bit-display" id="sPacketPreview">–</div>
+      <div class="helper" id="sPacketInfo">Configure payload above</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Transmitter</div>
+      <span class="status-badge status-idle" id="sStatus">IDLE</span>
+      <div class="progress-wrap"><div class="progress-bar" id="sProgress"></div></div>
+      <div id="sProgressLabel" style="font-size:0.65rem;color:var(--muted);margin-bottom:8px;">–</div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btnTorch" onclick="initTorch()">⚡ Enable Torch</button>
+      </div>
+      <div id="torchInfo" class="helper">Requires HTTPS + Android Chrome. iOS uses screen flash.</div>
+
+      <div class="btn-row" style="margin-top:8px;">
+        <button class="btn btn-success" id="btnSend" onclick="sendPacket()" disabled>▶ Send Packet</button>
+        <button class="btn btn-warn" id="btnStop" onclick="stopSend()" disabled>■ Stop</button>
+      </div>
+
+      <div class="divider"></div>
+      <div class="log" id="sLog"><span class="ls">// sender log</span></div>
     </div>
   </div>
 
-  <div class="row">
-    <!-- SENDER -->
-    <div class="card" id="senderCard">
-      <h3>Sender</h3>
+  <!-- ==================== RECEIVER PANEL ==================== -->
+  <div class="panel" id="receiverPanel">
 
-      <label>Payload bits (0/1 only)</label>
-      <input id="payloadBits" class="mono" value="1100110010101010" />
-
-      <label>Bit duration Tb (ms)</label>
-      <input id="tbMs" type="number" value="200" />
-
-      <label>Preamble / Postamble (fixed for Sprint-1)</label>
-      <div class="small mono">PREAMBLE: 10101010<br/>POSTAMBLE: 00000000</div>
-
-      <div style="height:10px"></div>
-      <button id="btnSenderInit">Enable Torch Sender (asks camera permission)</button>
-      <button id="btnSend" disabled>Send Packet</button>
-      <button id="btnStopSend" disabled>Stop</button>
-
-      <p id="senderStatus" class="small mono">Status: idle</p>
-      <p class="small">
-        If torch isn’t supported, it will automatically use full-screen flashing (white/black).
-      </p>
-
-      <!-- Hidden video needed to keep camera track alive for torch -->
-      <video id="senderVideo" playsinline muted style="display:none;"></video>
+    <div class="card">
+      <div class="card-title">Decode Config</div>
+      <div class="row2">
+        <div>
+          <label>Payload Length (bits)</label>
+          <input type="number" id="rPayLen" value="16" min="1" max="256">
+        </div>
+        <div>
+          <label>Bit Duration Tb (ms)</label>
+          <input type="number" id="rTb" value="200" min="50" max="2000" step="10">
+        </div>
+      </div>
+      <div class="row2" style="margin-top:10px;">
+        <div>
+          <label>ROI Size (%)</label>
+          <input type="number" id="rROI" value="40" min="10" max="100">
+        </div>
+        <div>
+          <label>Threshold Mode</label>
+          <select id="rThreshMode" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--accent2);font-family:'Share Tech Mono',monospace;padding:8px 10px;outline:none;">
+            <option value="adaptive">Adaptive Min/Max</option>
+            <option value="midpoint">Fixed Midpoint</option>
+          </select>
+        </div>
+      </div>
     </div>
 
-    <!-- RECEIVER -->
-    <div class="card" id="receiverCard" style="display:none;">
-      <h3>Receiver</h3>
+    <div class="card">
+      <div class="card-title">Camera Preview</div>
+      <video id="videoEl" autoplay muted playsinline></video>
+      <canvas id="debugCanvas" width="400" height="80"></canvas>
 
-      <label>Expected payload length (bits)</label>
-      <input id="payloadLen" type="number" value="16" />
-
-      <label>Bit duration Tb (ms) (must match sender)</label>
-      <input id="tbMsRx" type="number" value="200" />
-
-      <div style="height:10px"></div>
-      <button id="btnStartRx">Start Camera Receiver</button>
-      <button id="btnStopRx" disabled>Stop Receiver</button>
-
-      <p id="rxStatus" class="small mono">Status: idle</p>
-      <p id="rxLive" class="small mono">Luma: - | Bits buffered: 0</p>
-
-      <!-- ADDED: show live bits even if preamble isn't detected -->
-      <p id="rxBits" class="small mono">Bits(last 40): -</p>
-
-      <p id="rxDecoded" class="mono"></p>
-
-      <video id="rxVideo" playsinline muted></video>
-      <canvas id="rxCanvas" style="display:none;"></canvas>
+      <div class="luma-display" style="margin-top:8px;">
+        <span class="luma-label">LUMA</span>
+        <div class="luma-bar-wrap"><div class="luma-bar" id="lumaBar"></div></div>
+        <span class="luma-val" id="lumaVal">–</span>
+      </div>
+      <div class="luma-display">
+        <span class="luma-label">BIT·AVG</span>
+        <div class="luma-bar-wrap"><div class="luma-bar" id="bitLumaBar" style="background:linear-gradient(90deg,#003f5c,var(--accent2))"></div></div>
+        <span class="luma-val" id="bitLumaVal">–</span>
+      </div>
+      <div style="font-size:0.65rem;color:var(--muted);margin-top:4px;">
+        Thresh: <span id="threshVal" style="color:var(--accent)">–</span> &nbsp;|&nbsp;
+        Min: <span id="minVal" style="color:var(--muted)">–</span> &nbsp;|&nbsp;
+        Max: <span id="maxVal" style="color:var(--muted)">–</span>
+      </div>
     </div>
+
+    <div class="card">
+      <div class="card-title">Receiver Control</div>
+      <span class="status-badge status-idle" id="rStatus">IDLE</span>
+      <div class="btn-row" style="margin-top:8px;">
+        <button class="btn btn-primary" id="btnStartRx" onclick="startReceiver()">📷 Start Camera</button>
+        <button class="btn btn-warn" id="btnStopRx" onclick="stopReceiver()" disabled>■ Stop</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Decoded Bits (last 64)</div>
+      <div class="bit-display" id="rBitDisplay">–</div>
+      <div style="font-size:0.65rem;color:var(--muted);margin-top:6px;">
+        Buffered: <span id="rBufCount" style="color:var(--accent)">0</span> bits &nbsp;|&nbsp;
+        Packets found: <span id="rPktCount" style="color:var(--accent2)">0</span>
+      </div>
+    </div>
+
+    <div id="rResultArea"></div>
+
+    <div class="card">
+      <div class="card-title">Receiver Log</div>
+      <div class="log" id="rLog"><span class="ls">// receiver log</span></div>
+    </div>
+
   </div>
-
-  <div class="flashScreen" id="flashScreen"></div>
+</div>
 
 <script>
-(() => {
-  // ---------- Shared packet format ----------
-  const PREAMBLE = "10101010";
-  const POSTAMBLE = "00000000";
-
-  function buildPacket(payloadBitsStr) {
-    return (PREAMBLE + payloadBitsStr + POSTAMBLE).split("").map(ch => ch === "1" ? 1 : 0);
+// =====================================================================
+// PARTICLES
+// =====================================================================
+(function(){
+  const c = document.getElementById('particles');
+  for(let i=0;i<25;i++){
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.cssText = `
+      left:${Math.random()*100}%;
+      width:${1+Math.random()*2}px;
+      height:${1+Math.random()*2}px;
+      --dx:${(Math.random()-0.5)*60}px;
+      animation-duration:${6+Math.random()*10}s;
+      animation-delay:${Math.random()*8}s;
+      opacity:0;
+    `;
+    c.appendChild(p);
   }
+})();
 
-  function only01(s) { return /^[01]+$/.test(s); }
+// =====================================================================
+// GLOBALS
+// =====================================================================
+let torchStream = null;
+let torchTrack = null;
+let torchSupported = false;
+let sendInterval = null;
+let isSending = false;
 
-  // ---------- Mode switching ----------
-  const modeSel = document.getElementById("mode");
-  const senderCard = document.getElementById("senderCard");
-  const receiverCard = document.getElementById("receiverCard");
-  modeSel.addEventListener("change", () => {
-    const m = modeSel.value;
-    senderCard.style.display = (m === "sender") ? "" : "none";
-    receiverCard.style.display = (m === "receiver") ? "" : "none";
+let rxStream = null;
+let rxTrack = null;
+let rxAnimFrame = null;
+let rxRunning = false;
+
+const PREAMBLE = '10101010';
+const POSTAMBLE = '00000000';
+
+// =====================================================================
+// MODE SWITCHING
+// =====================================================================
+function setMode(mode) {
+  document.querySelectorAll('.mode-tab').forEach((t,i) => {
+    t.classList.toggle('active', (i===0 && mode==='sender')||(i===1 && mode==='receiver'));
   });
+  document.getElementById('senderPanel').classList.toggle('active', mode==='sender');
+  document.getElementById('receiverPanel').classList.toggle('active', mode==='receiver');
+  updatePacketPreview();
+}
 
-  // ============================================================
-  // SENDER (Torch if supported; else full-screen flash fallback)
-  // ============================================================
-  const btnSenderInit = document.getElementById("btnSenderInit");
-  const btnSend = document.getElementById("btnSend");
-  const btnStopSend = document.getElementById("btnStopSend");
-  const senderStatus = document.getElementById("senderStatus");
-  const payloadBits = document.getElementById("payloadBits");
-  const tbMs = document.getElementById("tbMs");
-  const senderVideo = document.getElementById("senderVideo");
-  const flashScreen = document.getElementById("flashScreen");
+// =====================================================================
+// PACKET PREVIEW
+// =====================================================================
+function buildPacket() {
+  const raw = document.getElementById('sPayload').value.replace(/[^01]/g,'');
+  const len = raw.length || 16;
+  const payload = raw || '0'.repeat(16);
+  const packet = PREAMBLE + payload + POSTAMBLE;
+  return { packet, payload, len };
+}
 
-  let senderStream = null;
-  let senderTrack = null;
-  let senderTorchSupported = false;
-  let sending = false;
+function updatePacketPreview() {
+  const {packet, payload} = buildPacket();
+  const el = document.getElementById('sPacketPreview');
+  let html = '';
+  for(let i=0;i<PREAMBLE.length;i++) html += `<span style="color:var(--accent)">${PREAMBLE[i]}</span>`;
+  for(let i=0;i<payload.length;i++) html += `<span class="bit-${payload[i]}">${payload[i]}</span>`;
+  for(let i=0;i<POSTAMBLE.length;i++) html += `<span style="color:var(--warn)">${POSTAMBLE[i]}</span>`;
+  el.innerHTML = html;
+  document.getElementById('sPacketInfo').textContent =
+    `Total: ${packet.length} bits | Preamble: ${PREAMBLE.length} | Payload: ${payload.length} | Postamble: ${POSTAMBLE.length}`;
+}
+document.getElementById('sPayload').addEventListener('input', updatePacketPreview);
+updatePacketPreview();
 
-  async function senderInit() {
-    senderStatus.textContent = "Status: requesting rear camera for torch…";
-    try {
-      senderStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
-        audio: false
-      });
-
-      senderVideo.srcObject = senderStream;
-      await senderVideo.play().catch(() => {});
-
-      senderTrack = senderStream.getVideoTracks()[0];
-      const caps = senderTrack.getCapabilities ? senderTrack.getCapabilities() : {};
-      senderTorchSupported = !!caps.torch;
-
-      senderStatus.innerHTML =
-        `Status: camera track ready. Torch supported: <b class="${senderTorchSupported ? 'ok':'bad'}">${senderTorchSupported}</b>`;
-
-      btnSend.disabled = false;
-      btnStopSend.disabled = false;
-
-    } catch (e) {
-      senderStatus.textContent = "Status: camera permission failed. Sender can still use screen flash (no permission needed).";
-      senderTorchSupported = false;
-      btnSend.disabled = false;
-      btnStopSend.disabled = false;
+// =====================================================================
+// SENDER - TORCH INIT
+// =====================================================================
+async function initTorch() {
+  const btn = document.getElementById('btnTorch');
+  btn.disabled = true;
+  sLog('Requesting camera for torch...');
+  try {
+    torchStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment' }
+    });
+    torchTrack = torchStream.getVideoTracks()[0];
+    const caps = torchTrack.getCapabilities ? torchTrack.getCapabilities() : {};
+    if (caps.torch) {
+      torchSupported = true;
+      sLog('✓ Torch (flashlight) supported!', 'ok');
+      document.getElementById('torchInfo').textContent = '✓ Torch API ready. Using hardware flashlight.';
+      document.getElementById('torchInfo').style.color = 'var(--accent2)';
+    } else {
+      torchSupported = false;
+      sLog('Torch not available — will use screen flash fallback', 'warn');
+      document.getElementById('torchInfo').textContent = '⚠ No torch API. Using fullscreen screen flash fallback.';
     }
+    document.getElementById('btnSend').disabled = false;
+    setSenderStatus('ok', torchSupported ? 'TORCH READY' : 'SCREEN READY');
+  } catch(e) {
+    sLog('Camera access denied: ' + e.message, 'err');
+    torchSupported = false;
+    document.getElementById('torchInfo').textContent = '⚠ Camera denied. Using screen flash (no camera needed for Sender).';
+    document.getElementById('btnSend').disabled = false;
+    setSenderStatus('ok', 'SCREEN READY');
   }
+  btn.disabled = false;
+}
 
-  async function setTorch(on) {
-    if (!senderTrack || !senderTorchSupported) return false;
+// =====================================================================
+// SENDER - SET BIT (torch or screen)
+// =====================================================================
+async function setBit(value) {
+  if (torchSupported && torchTrack) {
     try {
-      await senderTrack.applyConstraints({ advanced: [{ torch: on }] });
-      return true;
-    } catch (e) {
-      senderTorchSupported = false;
-      return false;
-    }
+      await torchTrack.applyConstraints({ advanced: [{ torch: value === 1 }] });
+    } catch(e) { /* fallback silently */ }
+  } else {
+    const overlay = document.getElementById('flashOverlay');
+    overlay.style.display = value === 1 ? 'block' : 'none';
+    overlay.style.background = value === 1 ? 'white' : 'black';
   }
+}
 
-  function setScreenFlash(on) {
-    flashScreen.style.display = "block";
-    flashScreen.style.background = on ? "#fff" : "#000";
-  }
+// =====================================================================
+// SENDER - SEND PACKET
+// =====================================================================
+async function sendPacket() {
+  if (isSending) return;
+  const Tb = parseInt(document.getElementById('sTb').value) || 200;
+  const reps = parseInt(document.getElementById('sRep').value) || 1;
+  const {packet} = buildPacket();
+  const fullSeq = Array.from({length: reps}, () => packet).join('');
 
-  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+  isSending = true;
+  document.getElementById('btnSend').disabled = true;
+  document.getElementById('btnStop').disabled = false;
+  setSenderStatus('sending', 'TRANSMITTING');
 
-  async function sendPacket() {
-    if (sending) return;
-    const payload = payloadBits.value.trim();
-    if (!only01(payload)) {
-      senderStatus.textContent = "Status: payload must contain only 0 and 1.";
+  sLog(`Sending ${fullSeq.length} bits @ Tb=${Tb}ms...`);
+
+  let idx = 0;
+  const overlay = document.getElementById('flashOverlay');
+  if (!torchSupported) { overlay.style.display = 'block'; overlay.style.background = 'black'; }
+
+  sendInterval = setInterval(async () => {
+    if (!isSending || idx >= fullSeq.length) {
+      clearInterval(sendInterval);
+      await setBit(0);
+      if (!torchSupported) { overlay.style.display = 'none'; }
+      isSending = false;
+      document.getElementById('btnSend').disabled = false;
+      document.getElementById('btnStop').disabled = true;
+      setSenderStatus('ok', 'DONE');
+      sLog('✓ Transmission complete.', 'ok');
+      setProgress(0);
+      document.getElementById('sProgressLabel').textContent = 'Done';
       return;
     }
-    const Tb = parseInt(tbMs.value, 10) || 200;
-    const bits = buildPacket(payload);
+    const bit = parseInt(fullSeq[idx]);
+    await setBit(bit);
+    const pct = Math.round((idx / fullSeq.length) * 100);
+    setProgress(pct);
+    document.getElementById('sProgressLabel').textContent =
+      `Bit ${idx+1}/${fullSeq.length} = ${bit}`;
+    idx++;
+  }, Tb);
+}
 
-    sending = true;
-    senderStatus.textContent = `Status: sending ${bits.length} bits (Tb=${Tb}ms).`;
+function stopSend() {
+  clearInterval(sendInterval);
+  setBit(0);
+  document.getElementById('flashOverlay').style.display = 'none';
+  isSending = false;
+  document.getElementById('btnSend').disabled = false;
+  document.getElementById('btnStop').disabled = true;
+  setSenderStatus('idle', 'IDLE');
+  setProgress(0);
+  sLog('Transmission stopped.');
+}
 
-    // Guard time: OFF
-    await setTorch(false);
-    setScreenFlash(false);
-    await sleep(800);
+function setProgress(pct) {
+  document.getElementById('sProgress').style.width = pct + '%';
+}
 
-    for (let i = 0; i < bits.length && sending; i++) {
-      const bit = bits[i];
-      const wantOn = (bit === 1);
+function setSenderStatus(type, label) {
+  const el = document.getElementById('sStatus');
+  el.textContent = label;
+  el.className = 'status-badge status-' + type;
+}
 
-      // try torch, fallback to screen flash
-      const didTorch = await setTorch(wantOn);
-      if (!didTorch) setScreenFlash(wantOn);
+function sLog(msg, type) {
+  const log = document.getElementById('sLog');
+  const line = document.createElement('div');
+  if(type==='ok') line.className='ls';
+  else if(type==='err'||type==='warn') line.className='le';
+  line.textContent = '> ' + msg;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
 
-      await sleep(Tb);
-    }
+// =====================================================================
+// RECEIVER GLOBALS
+// =====================================================================
+let rxBitBuffer = [];
+let rxLumaSamples = [];
+let rxBitWindowSamples = [];
+let rxBitStartTime = 0;
+let rxTb = 200;
+let rxPayLen = 16;
+let rxPacketCount = 0;
+let rxGraphData = [];
+let rxMinLuma = 255, rxMaxLuma = 0;
 
-    // cleanup OFF
-    await setTorch(false);
-    setScreenFlash(false);
-    flashScreen.style.display = "none";
+// =====================================================================
+// RECEIVER - START
+// =====================================================================
+async function startReceiver() {
+  rxTb = parseInt(document.getElementById('rTb').value) || 200;
+  rxPayLen = parseInt(document.getElementById('rPayLen').value) || 16;
 
-    senderStatus.textContent = "Status: done.";
-    sending = false;
+  document.getElementById('btnStartRx').disabled = true;
+  rLog('Requesting camera...');
+
+  try {
+    rxStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } }
+    });
+    const video = document.getElementById('videoEl');
+    video.srcObject = rxStream;
+    rxTrack = rxStream.getVideoTracks()[0];
+
+    await new Promise(r => video.onloadedmetadata = r);
+    video.play();
+
+    rxRunning = true;
+    rxBitBuffer = [];
+    rxLumaSamples = [];
+    rxBitWindowSamples = [];
+    rxBitStartTime = performance.now();
+    rxMinLuma = 255; rxMaxLuma = 0;
+    rxGraphData = [];
+
+    document.getElementById('btnStopRx').disabled = false;
+    setRxStatus('active', 'RECEIVING');
+    rLog('✓ Camera started. Listening for signal...', 'ok');
+    rxLoop();
+  } catch(e) {
+    rLog('Camera error: ' + e.message, 'err');
+    document.getElementById('btnStartRx').disabled = false;
   }
+}
 
-  function stopSend() {
-    sending = false;
-    setTorch(false);
-    setScreenFlash(false);
-    flashScreen.style.display = "none";
-    senderStatus.textContent = "Status: stopped.";
-  }
+function stopReceiver() {
+  rxRunning = false;
+  if(rxAnimFrame) cancelAnimationFrame(rxAnimFrame);
+  if(rxStream) rxStream.getTracks().forEach(t=>t.stop());
+  rxStream = null;
+  document.getElementById('videoEl').srcObject = null;
+  document.getElementById('btnStartRx').disabled = false;
+  document.getElementById('btnStopRx').disabled = true;
+  setRxStatus('idle', 'IDLE');
+  rLog('Receiver stopped.');
+}
 
-  btnSenderInit.addEventListener("click", senderInit);
-  btnSend.addEventListener("click", sendPacket);
-  btnStopSend.addEventListener("click", stopSend);
+function setRxStatus(type, label) {
+  const el = document.getElementById('rStatus');
+  el.textContent = label;
+  el.className = 'status-badge status-' + type;
+}
 
-  // ============================================================
-  // RECEIVER (getUserMedia + canvas sampling)
-  // ============================================================
-  const btnStartRx = document.getElementById("btnStartRx");
-  const btnStopRx = document.getElementById("btnStopRx");
-  const rxStatus = document.getElementById("rxStatus");
-  const rxLive = document.getElementById("rxLive");
-  const rxBits = document.getElementById("rxBits"); // ADDED
-  const rxDecoded = document.getElementById("rxDecoded");
-  const payloadLen = document.getElementById("payloadLen");
-  const tbMsRx = document.getElementById("tbMsRx");
-  const rxVideo = document.getElementById("rxVideo");
-  const rxCanvas = document.getElementById("rxCanvas");
-  const ctx = rxCanvas.getContext("2d", { willReadFrequently: true });
+// =====================================================================
+// RECEIVER LOOP
+// =====================================================================
+function rxLoop() {
+  if (!rxRunning) return;
 
-  let rxStream = null;
-  let rxRunning = false;
+  const video = document.getElementById('videoEl');
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth || 320;
+  canvas.height = video.videoHeight || 240;
+  const ctx = canvas.getContext('2d');
 
-  // Tb window accumulator
-  let winStart = -1;
-  let accSum = 0;
-  let accCount = 0;
+  function frame() {
+    if (!rxRunning) return;
+    rxAnimFrame = requestAnimationFrame(frame);
 
-  const bitAvgs = []; // float per bit window
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-  function indexOfSubseq(hay, needle) {
-    for (let i = 0; i <= hay.length - needle.length; i++) {
-      let ok = true;
-      for (let j = 0; j < needle.length; j++) {
-        if (hay[i + j] !== needle[j]) { ok = false; break; }
-      }
-      if (ok) return i;
-    }
-    return -1;
-  }
+    // ROI: center crop
+    const roiPct = parseInt(document.getElementById('rROI').value) / 100;
+    const roiW = Math.floor(canvas.width * roiPct);
+    const roiH = Math.floor(canvas.height * roiPct);
+    const roiX = Math.floor((canvas.width - roiW) / 2);
+    const roiY = Math.floor((canvas.height - roiH) / 2);
+    const imgData = ctx.getImageData(roiX, roiY, roiW, roiH);
 
-  function roiMeanLumaRGBA(imgData, w, h) {
-    // center ROI 35%..65%, sample step for speed
-    const x0 = Math.floor(w * 0.35), x1 = Math.floor(w * 0.65);
-    const y0 = Math.floor(h * 0.35), y1 = Math.floor(h * 0.65);
-    const step = 4;
-
-    let sum = 0, count = 0;
+    // compute mean luma
     const data = imgData.data;
+    let sum = 0;
+    const n = data.length / 4;
+    for (let i=0; i<data.length; i+=4) {
+      sum += 0.299*data[i] + 0.587*data[i+1] + 0.114*data[i+2];
+    }
+    const luma = sum / n;
 
-    for (let y = y0; y < y1; y += step) {
-      for (let x = x0; x < x1; x += step) {
-        const idx = (y * w + x) * 4;
-        const r = data[idx], g = data[idx + 1], b = data[idx + 2];
-        const l = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-        sum += l;
-        count++;
+    // update running min/max (sliding window with slow decay)
+    rxMinLuma = Math.min(rxMinLuma * 0.999 + luma * 0.001, luma);
+    rxMaxLuma = Math.max(rxMaxLuma * 0.999 + luma * 0.001, luma);
+    // clamp
+    rxMinLuma = Math.max(0, rxMinLuma);
+    rxMaxLuma = Math.min(255, rxMaxLuma);
+    if (rxMaxLuma - rxMinLuma < 5) rxMaxLuma = rxMinLuma + 5;
+
+    // update luma UI
+    document.getElementById('lumaBar').style.width = (luma/255*100) + '%';
+    document.getElementById('lumaVal').textContent = luma.toFixed(0);
+    document.getElementById('minVal').textContent = rxMinLuma.toFixed(0);
+    document.getElementById('maxVal').textContent = rxMaxLuma.toFixed(0);
+
+    // accumulate within current bit window
+    const now = performance.now();
+    rxBitWindowSamples.push(luma);
+
+    if (now - rxBitStartTime >= rxTb) {
+      // compute bit average
+      const avg = rxBitWindowSamples.reduce((a,b)=>a+b,0) / rxBitWindowSamples.length;
+      rxBitWindowSamples = [];
+      rxBitStartTime = now;
+
+      // threshold
+      let threshold;
+      const mode = document.getElementById('rThreshMode').value;
+      if (mode === 'adaptive') {
+        threshold = (rxMinLuma + rxMaxLuma) / 2;
+      } else {
+        threshold = 128;
       }
-    }
-    return count ? (sum / count) : 0;
-  }
+      const bit = avg > threshold ? 1 : 0;
 
-  function tryDecode() {
-    if (bitAvgs.length < 40) return;
+      document.getElementById('bitLumaBar').style.width = (avg/255*100) + '%';
+      document.getElementById('bitLumaVal').textContent = avg.toFixed(0);
+      document.getElementById('threshVal').textContent = threshold.toFixed(0);
 
-    const recent = bitAvgs.slice(-40);
-    const mn = Math.min(...recent);
-    const mx = Math.max(...recent);
-    if ((mx - mn) < 5) return;
+      // push bit
+      rxBitBuffer.push(bit);
 
-    const thr = (mn + mx) / 2;
-    const hard = recent.map(v => (v > thr ? 1 : 0));
+      // update display
+      renderBitDisplay();
 
-    // ADDED: show live bits even when not decoding
-    rxBits.textContent = `Bits(last 40): ${hard.join("")} | thr=${thr.toFixed(1)} mn=${mn.toFixed(1)} mx=${mx.toFixed(1)}`;
+      // graph
+      rxGraphData.push({ luma: avg, bit, threshold });
+      if (rxGraphData.length > 120) rxGraphData.shift();
+      drawDebugGraph();
 
-    const preBits = PREAMBLE.split("").map(ch => ch === "1" ? 1 : 0);
-    const idx = indexOfSubseq(hard, preBits);
-    if (idx < 0) return;
+      // try decode
+      tryDecodePacket();
 
-    const L = parseInt(payloadLen.value, 10) || 16;
-    const start = idx + preBits.length;
-    const need = start + L + POSTAMBLE.length;
-    if (hard.length < need) return;
+      // trim buffer
+      const maxBuf = (PREAMBLE.length + rxPayLen + POSTAMBLE.length) * 3;
+      if (rxBitBuffer.length > maxBuf) rxBitBuffer.splice(0, rxBitBuffer.length - maxBuf);
 
-    const payload = hard.slice(start, start + L);
-    const post = hard.slice(start + L, need);
-    const okPost = post.every(b => b === 0);
-    if (!okPost) return;
-
-    rxDecoded.innerHTML =
-      `<b class="ok">DECODED</b> payload (${L} bits): <span class="mono">${payload.join("")}</span><br/>
-       thr=${thr.toFixed(1)} mn=${mn.toFixed(1)} mx=${mx.toFixed(1)}`;
-  }
-
-  function onSample(t, luma, Tb) {
-    if (winStart < 0) winStart = t;
-    accSum += luma;
-    accCount++;
-
-    if ((t - winStart) >= Tb) {
-      const avg = accSum / Math.max(1, accCount);
-      bitAvgs.push(avg);
-      if (bitAvgs.length > 300) bitAvgs.splice(0, bitAvgs.length - 300);
-
-      winStart = t;
-      accSum = 0;
-      accCount = 0;
-
-      rxLive.textContent = `Luma(avg-bit): ${avg.toFixed(1)} | Bits buffered: ${bitAvgs.length}`;
-      tryDecode();
+      document.getElementById('rBufCount').textContent = rxBitBuffer.length;
     }
   }
 
-  async function startReceiver() {
-    rxStatus.textContent = "Status: requesting rear camera…";
-    rxDecoded.textContent = "";
-    rxBits.textContent = "Bits(last 40): -"; // reset
-    bitAvgs.length = 0;
-    winStart = -1; accSum = 0; accCount = 0;
+  frame();
+}
 
-    try {
-      rxStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
-        audio: false
-      });
+// =====================================================================
+// RENDER BIT DISPLAY
+// =====================================================================
+function renderBitDisplay() {
+  const last64 = rxBitBuffer.slice(-64);
+  const el = document.getElementById('rBitDisplay');
+  if (last64.length === 0) { el.innerHTML = '–'; return; }
+  el.innerHTML = last64.map((b,i) => `<span class="bit-${b}">${b}</span>`).join('');
+}
 
-      rxVideo.srcObject = rxStream;
-      await rxVideo.play();
+// =====================================================================
+// DECODE
+// =====================================================================
+function tryDecodePacket() {
+  const buf = rxBitBuffer.join('');
+  const totalLen = PREAMBLE.length + rxPayLen + POSTAMBLE.length;
 
-      rxRunning = true;
-      btnStopRx.disabled = false;
+  // search for preamble
+  const preIdx = buf.indexOf(PREAMBLE);
+  if (preIdx < 0) return;
 
-      rxStatus.textContent = "Status: running. Point sender torch at camera (try dim room).";
+  const endIdx = preIdx + totalLen;
+  if (endIdx > buf.length) return;
 
-      const loop = () => {
-        if (!rxRunning) return;
+  const candidate = buf.slice(preIdx, endIdx);
+  const candidatePost = candidate.slice(PREAMBLE.length + rxPayLen);
 
-        const Tb = parseInt(tbMsRx.value, 10) || 200;
-        const w = rxVideo.videoWidth, h = rxVideo.videoHeight;
-        if (w && h) {
-          rxCanvas.width = w;
-          rxCanvas.height = h;
-          ctx.drawImage(rxVideo, 0, 0, w, h);
-          const img = ctx.getImageData(0, 0, w, h);
-          const luma = roiMeanLumaRGBA(img, w, h);
-          onSample(performance.now(), luma, Tb);
-        }
-        requestAnimationFrame(loop);
-      };
-      requestAnimationFrame(loop);
+  // check postamble (allow 1 bit error)
+  let postErrors = 0;
+  for(let i=0;i<POSTAMBLE.length;i++) if(candidatePost[i]!==POSTAMBLE[i]) postErrors++;
+  if(postErrors > 2) return;
 
-    } catch (e) {
-      rxStatus.textContent = "Status: camera permission failed / not supported.";
-    }
+  const payload = candidate.slice(PREAMBLE.length, PREAMBLE.length + rxPayLen);
+
+  rxPacketCount++;
+  document.getElementById('rPktCount').textContent = rxPacketCount;
+
+  rLog(`✓ Packet #${rxPacketCount} decoded: ${payload}`, 'ok');
+
+  // show result
+  const resultArea = document.getElementById('rResultArea');
+  resultArea.innerHTML = `
+    <div class="result-box">
+      <div class="result-label">✓ Decoded Payload #${rxPacketCount}</div>
+      <div class="result-payload">${payload}</div>
+      <div style="font-size:0.65rem;color:var(--muted);margin-top:6px;">
+        Pre errors: 0 &nbsp;|&nbsp; Post errors: ${postErrors} &nbsp;|&nbsp; Length: ${payload.length} bits
+      </div>
+    </div>`;
+
+  // consume bits up to end of packet to avoid double-decode
+  rxBitBuffer.splice(0, endIdx);
+}
+
+// =====================================================================
+// DEBUG GRAPH
+// =====================================================================
+function drawDebugGraph() {
+  const canvas = document.getElementById('debugCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  // background
+  ctx.fillStyle = '#020c14';
+  ctx.fillRect(0,0,W,H);
+
+  const n = rxGraphData.length;
+  if (n < 2) return;
+
+  // threshold line
+  if (rxGraphData.length > 0) {
+    const th = rxGraphData[rxGraphData.length-1].threshold;
+    const thY = H - (th/255)*H;
+    ctx.strokeStyle = 'rgba(255,107,53,0.5)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(0,thY); ctx.lineTo(W,thY); ctx.stroke();
+    ctx.setLineDash([]);
   }
 
-  function stopReceiver() {
-    rxRunning = false;
-    btnStopRx.disabled = true;
-    if (rxStream) {
-      rxStream.getTracks().forEach(t => t.stop());
-      rxStream = null;
-    }
-    rxStatus.textContent = "Status: stopped.";
-  }
+  // luma line
+  ctx.strokeStyle = '#00d4ff';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  rxGraphData.forEach((d,i) => {
+    const x = (i/(n-1))*W;
+    const y = H - (d.luma/255)*H;
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.stroke();
 
-  btnStartRx.addEventListener("click", startReceiver);
-  btnStopRx.addEventListener("click", stopReceiver);
+  // bit dots
+  rxGraphData.forEach((d,i) => {
+    const x = (i/(n-1))*W;
+    const y = H - (d.luma/255)*H;
+    ctx.fillStyle = d.bit === 1 ? '#00ff9d' : 'rgba(74,122,153,0.6)';
+    ctx.beginPath();
+    ctx.arc(x,y,2.5,0,Math.PI*2);
+    ctx.fill();
+  });
 
-})();
+  // legend
+  ctx.fillStyle = 'rgba(0,212,255,0.7)';
+  ctx.font = '9px Share Tech Mono';
+  ctx.fillText('LUMA', 4, 12);
+  ctx.fillStyle = 'rgba(255,107,53,0.7)';
+  ctx.fillText('THRESH', 4, 24);
+}
+
+// =====================================================================
+// RECEIVER LOG
+// =====================================================================
+function rLog(msg, type) {
+  const log = document.getElementById('rLog');
+  const line = document.createElement('div');
+  if(type==='ok') line.className='ls';
+  else if(type==='err'||type==='warn') line.className='le';
+  line.textContent = '> ' + msg;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+// =====================================================================
+// INIT
+// =====================================================================
+updatePacketPreview();
 </script>
 </body>
 </html>
