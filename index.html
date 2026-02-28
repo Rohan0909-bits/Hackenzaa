@@ -3,222 +3,181 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>U-Flash · Underwater Optical Comm</title>
+<title>U-Flash · Optical Comm</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#020c14;--surface:#041824;--card:#071f2e;--border:#0e4a6e;
-    --accent:#00d4ff;--accent2:#00ff9d;--warn:#ff6b35;
-    --text:#c8e8f8;--muted:#4a7a99;--glow:0 0 20px rgba(0,212,255,.3);
-    --pre-col:#ffe066;--post-col:#ff6b35;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace;min-height:100vh;overflow-x:hidden}
-  body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
-    background:radial-gradient(ellipse at 20% 80%,rgba(0,100,160,.12) 0%,transparent 60%),
-               radial-gradient(ellipse at 80% 20%,rgba(0,212,255,.07) 0%,transparent 50%);
-    animation:bgP 8s ease-in-out infinite alternate}
-  @keyframes bgP{from{opacity:.6}to{opacity:1}}
-  .particles{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-  .particle{position:absolute;width:2px;height:2px;background:var(--accent);border-radius:50%;opacity:0;animation:fp linear infinite}
-  @keyframes fp{0%{transform:translateY(100vh);opacity:0}10%{opacity:.5}90%{opacity:.2}100%{transform:translateY(-10vh) translateX(var(--dx,20px));opacity:0}}
-  .app{position:relative;z-index:1;max-width:500px;margin:0 auto;padding:16px}
-  header{text-align:center;padding:18px 0 14px;border-bottom:1px solid var(--border);margin-bottom:18px}
-  header h1{font-family:'Orbitron',monospace;font-size:1.8rem;font-weight:900;color:var(--accent);text-shadow:var(--glow)}
-  header p{font-size:.68rem;color:var(--muted);margin-top:4px;letter-spacing:.15em;text-transform:uppercase}
-  .mode-tabs{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:18px}
-  .mode-tab{flex:1;padding:12px;background:var(--card);border:none;color:var(--muted);font-family:'Orbitron',monospace;font-size:.75rem;font-weight:700;letter-spacing:.1em;cursor:pointer;transition:all .2s;text-transform:uppercase}
-  .mode-tab.active{background:var(--accent);color:var(--bg)}
-  .mode-tab:not(.active):hover{background:var(--surface);color:var(--text)}
-  .panel{display:none}.panel.active{display:block}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px;position:relative}
-  .card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.5}
-  .card-title{font-family:'Orbitron',monospace;font-size:.63rem;color:var(--accent);letter-spacing:.2em;text-transform:uppercase;margin-bottom:12px}
-  label{display:block;font-size:.63rem;color:var(--muted);letter-spacing:.15em;text-transform:uppercase;margin:10px 0 4px}
-  label:first-of-type{margin-top:0}
-  input[type=text],input[type=number],textarea,select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--accent2);font-family:'Share Tech Mono',monospace;font-size:.88rem;padding:8px 10px;outline:none;transition:border-color .2s}
-  input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:var(--glow)}
-  textarea{resize:vertical;min-height:52px}
-  .row2{display:flex;gap:10px}.row2>*{flex:1}
-  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;border:none;border-radius:5px;font-family:'Share Tech Mono',monospace;font-size:.8rem;cursor:pointer;transition:all .2s;letter-spacing:.06em;width:100%;margin-top:6px}
-  .btn-primary{background:var(--accent);color:var(--bg)}.btn-primary:hover:not(:disabled){background:#33ddff;box-shadow:var(--glow)}
-  .btn-success{background:var(--accent2);color:var(--bg)}.btn-success:hover:not(:disabled){background:#33ffb8}
-  .btn-warn{background:var(--warn);color:#fff}.btn-warn:hover:not(:disabled){background:#ff8555}
-  .btn:disabled{opacity:.35;cursor:not-allowed}
-  .btn-row{display:flex;gap:8px}.btn-row .btn{flex:1}
-  .sbadge{display:inline-block;font-size:.63rem;padding:3px 9px;border-radius:3px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
-  .s-idle{background:rgba(74,122,153,.2);color:var(--muted);border:1px solid var(--border)}
-  .s-send{background:rgba(255,107,53,.2);color:var(--warn);border:1px solid var(--warn);animation:blink .5s step-end infinite}
-  .s-ok{background:rgba(0,255,157,.15);color:var(--accent2);border:1px solid var(--accent2)}
-  .s-active{background:rgba(0,212,255,.15);color:var(--accent);border:1px solid var(--accent)}
-  .s-pre{background:rgba(255,224,102,.15);color:var(--pre-col);border:1px solid var(--pre-col);animation:blink .4s step-end infinite}
-  @keyframes blink{50%{opacity:.3}}
-  #preBanner{display:none;text-align:center;padding:10px;background:rgba(255,224,102,.12);border:1px solid var(--pre-col);border-radius:6px;color:var(--pre-col);font-family:'Orbitron',monospace;font-size:.7rem;letter-spacing:.15em;margin-bottom:12px;animation:blink .5s step-end infinite}
-  #preBanner.show{display:block}
-  .prog-wrap{height:6px;background:var(--bg);border-radius:3px;border:1px solid var(--border);overflow:hidden;margin:8px 0}
-  .prog-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px;width:0%;transition:width .08s;box-shadow:0 0 8px var(--accent)}
-  #videoEl{width:100%;border-radius:6px;border:1px solid var(--border);background:#000;display:block;max-height:180px;object-fit:cover}
-  #debugCanvas{width:100%;border-radius:6px;border:1px solid var(--border);background:#000;display:block;margin-top:8px;height:90px}
-  .lrow{display:flex;align-items:center;gap:8px;margin:6px 0}
-  .llbl{font-size:.6rem;color:var(--muted);white-space:nowrap;min-width:60px}
-  .lbw{flex:1;height:12px;background:var(--bg);border-radius:3px;border:1px solid var(--border);overflow:hidden}
-  .lbf{height:100%;background:linear-gradient(90deg,#003f5c,var(--accent));width:0%;transition:width .06s}
-  .lval{font-size:.72rem;color:var(--accent2);min-width:36px;text-align:right}
-  .bitdisp{font-family:'Share Tech Mono',monospace;font-size:.8rem;letter-spacing:.08em;word-break:break-all;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:8px 10px;min-height:40px;line-height:1.8}
-  .b1{color:var(--accent2)}.b0{color:var(--muted)}.bpre{color:var(--pre-col)}.bpost{color:var(--post-col)}
-  .result-box{background:rgba(0,255,157,.06);border:1px solid var(--accent2);border-radius:6px;padding:14px;margin-top:4px}
-  .rl{font-size:.6rem;color:var(--accent2);letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px}
-  .rt{font-size:1.3rem;color:var(--accent2);word-break:break-word;margin-bottom:8px;font-family:'Orbitron',monospace;letter-spacing:.05em}
-  .rb{font-size:.66rem;color:var(--muted);word-break:break-all;line-height:1.6}
-  .rmeta{font-size:.6rem;color:var(--muted);margin-top:6px}
-  .log{font-size:.62rem;color:var(--muted);max-height:90px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:6px 8px;line-height:1.7}
-  .log .le{color:var(--warn)}.log .ls{color:var(--accent)}.log .lp{color:var(--pre-col)}
-  #flashOverlay{display:none;position:fixed;inset:0;z-index:9999}
-  .helper{font-size:.61rem;color:var(--muted);margin-top:4px;line-height:1.5}
-  .divider{height:1px;background:var(--border);margin:12px 0;opacity:.4}
-  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+:root{
+  --bg:#020c14;--card:#071f2e;--border:#0e4a6e;
+  --accent:#00d4ff;--green:#00ff9d;--warn:#ff6b35;
+  --text:#c8e8f8;--muted:#4a7a99;
+  --pre:#ffe066;--glow:0 0 18px rgba(0,212,255,.35);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace;min-height:100vh}
+.app{max-width:480px;margin:0 auto;padding:14px}
+header{text-align:center;padding:16px 0 12px;border-bottom:1px solid var(--border);margin-bottom:16px}
+h1{font-family:'Orbitron',monospace;font-size:1.7rem;font-weight:900;color:var(--accent);text-shadow:var(--glow)}
+header p{font-size:.65rem;color:var(--muted);margin-top:3px;letter-spacing:.15em;text-transform:uppercase}
+.tabs{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:16px}
+.tab{flex:1;padding:11px;background:var(--card);border:none;color:var(--muted);font-family:'Orbitron',monospace;font-size:.72rem;font-weight:700;letter-spacing:.1em;cursor:pointer;transition:.2s;text-transform:uppercase}
+.tab.on{background:var(--accent);color:var(--bg)}
+.panel{display:none}.panel.on{display:block}
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:15px;margin-bottom:13px;position:relative}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.5}
+.ct{font-family:'Orbitron',monospace;font-size:.6rem;color:var(--accent);letter-spacing:.2em;text-transform:uppercase;margin-bottom:11px}
+lbl{display:block;font-size:.6rem;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin:9px 0 3px}
+lbl:first-child{margin-top:0}
+input,textarea,select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--green);font-family:'Share Tech Mono',monospace;font-size:.87rem;padding:7px 9px;outline:none;transition:border-color .2s}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+textarea{resize:vertical;min-height:50px}
+.r2{display:flex;gap:9px}.r2>*{flex:1}
+.btn{display:flex;align-items:center;justify-content:center;padding:10px 12px;border:none;border-radius:5px;font-family:'Share Tech Mono',monospace;font-size:.78rem;cursor:pointer;transition:.2s;width:100%;margin-top:5px;letter-spacing:.05em}
+.bp{background:var(--accent);color:var(--bg)}.bp:hover:not(:disabled){background:#2de0ff;box-shadow:var(--glow)}
+.bg{background:var(--green);color:var(--bg)}.bg:hover:not(:disabled){background:#22ffb0}
+.bw{background:var(--warn);color:#fff}.bw:hover:not(:disabled){background:#ff8555}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.br{display:flex;gap:7px}.br .btn{flex:1}
+.badge{display:inline-block;font-size:.6rem;padding:3px 8px;border-radius:3px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:7px}
+.bi{background:rgba(74,122,153,.2);color:var(--muted);border:1px solid var(--border)}
+.bs{background:rgba(255,107,53,.2);color:var(--warn);border:1px solid var(--warn);animation:bk .5s step-end infinite}
+.bo{background:rgba(0,255,157,.15);color:var(--green);border:1px solid var(--green)}
+.ba{background:rgba(0,212,255,.15);color:var(--accent);border:1px solid var(--accent)}
+.bpre{background:rgba(255,224,102,.15);color:var(--pre);border:1px solid var(--pre);animation:bk .4s step-end infinite}
+@keyframes bk{50%{opacity:.25}}
+.pw{height:5px;background:var(--bg);border-radius:3px;border:1px solid var(--border);overflow:hidden;margin:7px 0}
+.pb{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));width:0%;transition:width .1s;box-shadow:0 0 6px var(--accent)}
+video{width:100%;border-radius:5px;border:1px solid var(--border);background:#000;display:block;max-height:170px;object-fit:cover}
+canvas{width:100%;display:block;border-radius:5px;border:1px solid var(--border);background:#000;margin-top:7px}
+.lrow{display:flex;align-items:center;gap:7px;margin:5px 0}
+.llb{font-size:.58rem;color:var(--muted);min-width:58px}
+.lbw{flex:1;height:11px;background:var(--bg);border-radius:3px;border:1px solid var(--border);overflow:hidden}
+.lbf{height:100%;width:0%;transition:width .07s}
+.lv{font-size:.7rem;color:var(--green);min-width:32px;text-align:right}
+.bits{font-family:'Share Tech Mono',monospace;font-size:.78rem;letter-spacing:.07em;word-break:break-all;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:7px 9px;min-height:36px;line-height:1.8}
+.b1{color:var(--green)}.b0{color:var(--muted)}.bpx{color:var(--pre)}.bex{color:var(--warn)}
+.result{background:rgba(0,255,157,.06);border:2px solid var(--green);border-radius:7px;padding:14px;margin-top:5px}
+.rl{font-size:.58rem;color:var(--green);letter-spacing:.2em;text-transform:uppercase;margin-bottom:7px}
+.rt{font-size:1.4rem;color:var(--green);word-break:break-word;margin-bottom:7px;font-family:'Orbitron',monospace;text-shadow:0 0 12px rgba(0,255,157,.5)}
+.rb{font-size:.65rem;color:var(--muted);word-break:break-all;line-height:1.6}
+.rm{font-size:.58rem;color:var(--muted);margin-top:5px}
+.log{font-size:.6rem;color:var(--muted);max-height:85px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:5px 8px;line-height:1.7}
+.lok{color:var(--accent)}.lerr{color:var(--warn)}.lpre{color:var(--pre)}
+#flashOverlay{display:none;position:fixed;inset:0;z-index:9999}
+.note{font-size:.59rem;color:var(--muted);margin-top:4px;line-height:1.5}
+.sep{height:1px;background:var(--border);margin:10px 0;opacity:.4}
+#preBanner{display:none;text-align:center;padding:9px;background:rgba(255,224,102,.1);border:1px solid var(--pre);border-radius:5px;color:var(--pre);font-family:'Orbitron',monospace;font-size:.67rem;letter-spacing:.12em;margin-bottom:10px;animation:bk .5s step-end infinite}
+#preBanner.on{display:block}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 </style>
 </head>
 <body>
-<div class="particles" id="particles"></div>
 <div id="flashOverlay"></div>
 <div class="app">
-  <header>
-    <h1>U-FLASH</h1>
-    <p>Underwater Optical Communication · Sprint-1</p>
-  </header>
-  <div class="mode-tabs">
-    <button class="mode-tab active" onclick="setMode('sender')">⚡ Sender</button>
-    <button class="mode-tab" onclick="setMode('receiver')">📡 Receiver</button>
+  <header><h1>U-FLASH</h1><p>Optical Comm · Sprint 1</p></header>
+
+  <div class="tabs">
+    <button class="tab on" onclick="setTab('s')">⚡ Sender</button>
+    <button class="tab" onclick="setTab('r')">📡 Receiver</button>
   </div>
 
   <!-- ══ SENDER ══ -->
-  <div class="panel active" id="senderPanel">
+  <div class="panel on" id="SP">
     <div class="card">
-      <div class="card-title">Message</div>
-      <label>Input Mode</label>
-      <select id="sMode" onchange="onModeChange()">
+      <div class="ct">Message</div>
+      <lbl>Mode</lbl>
+      <select id="sMode" onchange="modeChange()">
         <option value="text">Text (ASCII)</option>
         <option value="bits">Raw Bits</option>
       </select>
-      <div id="sTextWrap">
-        <label>Text Message</label>
-        <textarea id="sText" placeholder="Type your message here…">Hello</textarea>
+      <div id="sTW">
+        <lbl>Text</lbl>
+        <textarea id="sTxt" placeholder="Type message…">Hi</textarea>
       </div>
-      <div id="sBitsWrap" style="display:none">
-        <label>Raw Bits</label>
-        <textarea id="sBits" placeholder="1010…">10110010</textarea>
+      <div id="sBW" style="display:none">
+        <lbl>Binary</lbl>
+        <textarea id="sBts" placeholder="10110…">10110010</textarea>
       </div>
-      <div class="row2" style="margin-top:10px">
-        <div>
-          <label>Bit Duration Tb (ms)</label>
-          <input type="number" id="sTb" value="300" min="80" max="3000" step="10">
-        </div>
-        <div>
-          <label>Guard Zeros</label>
-          <input type="number" id="sGuard" value="4" min="0" max="16">
-        </div>
+      <div class="r2" style="margin-top:9px">
+        <div><lbl>Tb (ms/bit)</lbl><input type="number" id="sTb" value="250" min="100" max="2000" step="10"></div>
+        <div><lbl>Gap bits</lbl><input type="number" id="sGap" value="8" min="4" max="32"><div class="note">Extra 0s before payload</div></div>
       </div>
-      <div class="helper">💡 Guard zeros = extra OFF bits before payload. Increase (e.g. 8) if receiver misses first characters.</div>
     </div>
+
     <div class="card">
-      <div class="card-title">Packet Preview</div>
-      <div class="bitdisp" id="sPktPrev">–</div>
-      <div class="helper" id="sPktInfo">–</div>
+      <div class="ct">Packet Preview</div>
+      <div class="bits" id="sPrev">–</div>
+      <div id="sPInfo" class="note" style="margin-top:5px">–</div>
     </div>
+
     <div class="card">
-      <div class="card-title">Transmitter</div>
-      <span class="sbadge s-idle" id="sStatus">IDLE</span>
-      <div class="prog-wrap"><div class="prog-bar" id="sProgress"></div></div>
-      <div id="sProgLbl" style="font-size:.63rem;color:var(--muted);margin-bottom:8px">–</div>
-      <div class="btn-row">
-        <button class="btn btn-primary" id="btnTorch" onclick="initTorch()">⚡ Init Torch / Screen Flash</button>
+      <div class="ct">Transmit</div>
+      <span class="badge bi" id="sStatus">IDLE</span>
+      <div class="pw"><div class="pb" id="sProg"></div></div>
+      <div id="sLbl" style="font-size:.6rem;color:var(--muted);margin-bottom:7px">–</div>
+      <button class="btn bp" id="btnInit" onclick="initTx()">⚡ Init (request camera/torch)</button>
+      <div id="txInfo" class="note">Tap first. Android Chrome = torch; other = screen flash.</div>
+      <div class="br" style="margin-top:7px">
+        <button class="btn bg" id="btnSend" onclick="doSend()" disabled>▶ Send</button>
+        <button class="btn bw" id="btnStop" onclick="stopSend()" disabled>■ Stop</button>
       </div>
-      <div id="torchInfo" class="helper">Tap first to request camera. Android Chrome uses hardware torch; iOS/desktop uses full-screen flash.</div>
-      <div class="btn-row" style="margin-top:8px">
-        <button class="btn btn-success" id="btnSend" onclick="sendPacket()" disabled>▶ Send Packet</button>
-        <button class="btn btn-warn" id="btnStopS" onclick="stopSend()" disabled>■ Stop</button>
-      </div>
-      <div class="divider"></div>
-      <div class="log" id="sLog"><span class="ls">// sender ready — init torch first</span></div>
+      <div class="sep"></div>
+      <div class="log" id="sLog"><span class="lok">// sender ready</span></div>
     </div>
   </div>
 
   <!-- ══ RECEIVER ══ -->
-  <div class="panel" id="receiverPanel">
+  <div class="panel" id="RP">
     <div class="card">
-      <div class="card-title">Decode Config</div>
-      <div class="row2">
-        <div>
-          <label>Bit Duration Tb (ms)</label>
-          <input type="number" id="rTbIn" value="300" min="80" max="3000" step="10">
-          <div class="helper">Must match sender Tb exactly</div>
-        </div>
-        <div>
-          <label>ROI Size (%)</label>
-          <input type="number" id="rROI" value="50" min="10" max="100">
-          <div class="helper">Center crop % of frame</div>
-        </div>
+      <div class="ct">Settings</div>
+      <div class="r2">
+        <div><lbl>Tb (ms/bit) — must match sender</lbl><input type="number" id="rTb" value="250" min="100" max="2000" step="10"></div>
+        <div><lbl>ROI %</lbl><input type="number" id="rROI" value="40" min="10" max="100"></div>
       </div>
-      <div class="row2" style="margin-top:10px">
-        <div>
-          <label>Threshold Mode</label>
-          <select id="rThresh">
-            <option value="adaptive">Adaptive (Min/Max)</option>
-            <option value="otsu">Otsu Histogram</option>
-            <option value="fixed">Fixed 128</option>
-          </select>
-        </div>
-        <div>
-          <label>Bit Error Tolerance</label>
-          <input type="number" id="rErrTol" value="2" min="0" max="5">
-          <div class="helper">Allowed bit flips in EOP</div>
-        </div>
+      <div class="note" style="margin-top:6px">⚠ Both phones <b>must</b> use the same Tb value.</div>
+    </div>
+
+    <div class="card">
+      <div class="ct">Camera</div>
+      <video id="vid" autoplay muted playsinline></video>
+      <canvas id="gc" height="80"></canvas>
+      <div class="lrow" style="margin-top:7px">
+        <span class="llb">LUMA</span>
+        <div class="lbw"><div class="lbf" id="lBar" style="background:linear-gradient(90deg,#003f5c,var(--accent))"></div></div>
+        <span class="lv" id="lVal">–</span>
+      </div>
+      <div style="font-size:.6rem;color:var(--muted);margin-top:3px">
+        Min:<span id="lMin" style="color:var(--accent)">–</span>
+        Max:<span id="lMax" style="color:var(--accent)">–</span>
+        Thresh:<span id="lTh" style="color:var(--pre)">–</span>
+        Samp/bit:<span id="lSpb" style="color:var(--green)">–</span>
       </div>
     </div>
+
     <div class="card">
-      <div class="card-title">Camera + Signal Monitor</div>
-      <video id="videoEl" autoplay muted playsinline></video>
-      <canvas id="debugCanvas" width="460" height="90"></canvas>
-      <div class="lrow" style="margin-top:8px">
-        <span class="llbl">LUMA/frame</span>
-        <div class="lbw"><div class="lbf" id="lumaBar"></div></div>
-        <span class="lval" id="lumaVal">–</span>
-      </div>
-      <div class="lrow">
-        <span class="llbl">BIT·AVG</span>
-        <div class="lbw"><div class="lbf" id="bitLBar" style="background:linear-gradient(90deg,#003f5c,var(--accent2))"></div></div>
-        <span class="lval" id="bitLVal">–</span>
-      </div>
-      <div style="font-size:.62rem;color:var(--muted);margin-top:5px;line-height:1.8">
-        Thresh: <span id="thVal" style="color:var(--accent)">–</span> &nbsp;|&nbsp;
-        Min: <span id="minLDisp" style="color:var(--muted)">–</span> &nbsp;|&nbsp;
-        Max: <span id="maxLDisp" style="color:var(--muted)">–</span> &nbsp;|&nbsp;
-        Samp/bit: <span id="spb" style="color:var(--accent2)">–</span>
+      <div class="ct">Control</div>
+      <span class="badge bi" id="rStatus">IDLE</span>
+      <div id="preBanner">⚡ PREAMBLE LOCKED — COLLECTING PAYLOAD</div>
+      <div class="br">
+        <button class="btn bp" id="btnRxStart" onclick="startRx()">📷 Start Receiver</button>
+        <button class="btn bw" id="btnRxStop" onclick="stopRx()" disabled>■ Stop</button>
       </div>
     </div>
+
     <div class="card">
-      <div class="card-title">Receiver Control</div>
-      <span class="sbadge s-idle" id="rStatus">IDLE</span>
-      <div id="preBanner">⚡ PREAMBLE LOCKED — NOW RECEIVING PAYLOAD</div>
-      <div class="btn-row" style="margin-top:8px">
-        <button class="btn btn-primary" id="btnStartRx" onclick="startReceiver()">📷 Start Camera</button>
-        <button class="btn btn-warn" id="btnStopRx" onclick="stopReceiver()" disabled>■ Stop</button>
+      <div class="ct">Bit Stream</div>
+      <div class="bits" id="rBits">–</div>
+      <div style="font-size:.6rem;color:var(--muted);margin-top:4px">
+        Bits: <span id="rCnt" style="color:var(--accent)">0</span> &nbsp;|&nbsp;
+        Pkts: <span id="rPkts" style="color:var(--green)">0</span> &nbsp;|&nbsp;
+        State: <span id="rState" style="color:var(--pre)">HUNT</span>
       </div>
     </div>
+
+    <div id="rResult"></div>
+
     <div class="card">
-      <div class="card-title">Live Bit Stream (last 80)</div>
-      <div class="bitdisp" id="rBitDisp">–</div>
-      <div style="font-size:.62rem;color:var(--muted);margin-top:5px">
-        Bits received: <span id="rBufCnt" style="color:var(--accent)">0</span> &nbsp;|&nbsp;
-        Packets decoded: <span id="rPktCnt" style="color:var(--accent2)">0</span> &nbsp;|&nbsp;
-        State: <span id="rxStateLbl" style="color:var(--pre-col)">HUNTING</span>
-      </div>
-    </div>
-    <div id="rResultArea"></div>
-    <div class="card">
-      <div class="card-title">Receiver Log</div>
-      <div class="log" id="rLog"><span class="ls">// receiver ready — start camera to begin</span></div>
+      <div class="ct">Log</div>
+      <div class="log" id="rLog"><span class="lok">// receiver ready</span></div>
     </div>
   </div>
 </div>
@@ -226,326 +185,424 @@
 <script>
 'use strict';
 
-// ── Particles ────────────────────────────────────────────────────────
-(()=>{
-  const c=document.getElementById('particles');
-  for(let i=0;i<20;i++){
-    const p=document.createElement('div');p.className='particle';
-    p.style.cssText=`left:${Math.random()*100}%;--dx:${(Math.random()-.5)*60}px;`+
-      `animation-duration:${7+Math.random()*9}s;animation-delay:${Math.random()*8}s`;
-    c.appendChild(p);
-  }
-})();
-
-// ─────────────────────────────────────────────────────────────────────
-// PROTOCOL
-// Packet layout: PREAMBLE(8) + SOP(8) + GUARD_ZEROS(N) + PAYLOAD + EOP(16)
+// ═══════════════════════════════════════════════════════════════════════
+// PROTOCOL DESIGN (simple & robust)
 //
-// FIX 1: EOP changed from 8-bit '00001111' to 16-bit '1111000011110000'
-//   → Much less likely to appear in ASCII payload data
-// ─────────────────────────────────────────────────────────────────────
-const PREAMBLE = '10101010';        // 8-bit sync
-const SOP      = '11110000';        // 8-bit start-of-payload marker
-const EOP      = '1111000011110000'; // 16-bit end-of-payload (unique, won't clash with ASCII)
-const SYNC_WORD = PREAMBLE + SOP;   // 16-bit combined search target
+// Packet: PREAMBLE + [payload bits] + POSTAMBLE
+//
+// PREAMBLE  = 16 bits: 1010101011001100
+//   - alternating segment (10101010) for clock recovery
+//   - unique ending (11001100) to mark exact start of payload
+//
+// POSTAMBLE = 16 bits: 0011001101010101  (mirror of preamble)
+//   - unique enough to not appear in normal ASCII
+//
+// GAP: sender inserts N zero-bits before payload so receiver clock can settle
+//
+// ENCODING: NRZ (Non-Return-to-Zero)
+//   - bit 1 = LIGHT ON (white screen / torch on)
+//   - bit 0 = LIGHT OFF (black screen / torch off)
+//
+// RECEIVER APPROACH: Continuous luma sampling + peak detection
+//   - Collect raw luma into a rolling array timestamped with performance.now()
+//   - Every Tb ms, average the window → one bit sample
+//   - Normalize using rolling min/max → threshold = 0.5 (midpoint)
+//   - Sliding window search for preamble pattern
+//   - On match: lock clock to that position, read payload until postamble
+// ═══════════════════════════════════════════════════════════════════════
 
-// ── Text ↔ bits ──────────────────────────────────────────────────────
-function textToBits(str){
-  return [...str].map(c=>c.charCodeAt(0).toString(2).padStart(8,'0')).join('');
-}
-function bitsToText(bits){
-  // Only convert if bits are a multiple of 8
-  const trimmed = bits.length % 8 === 0 ? bits : bits.slice(0, bits.length - (bits.length%8));
-  const chars=[];
-  for(let i=0;i+8<=trimmed.length;i+=8){
-    const code=parseInt(trimmed.slice(i,i+8),2);
-    // Accept printable ASCII (32–126) plus common whitespace
-    if((code>=32&&code<=126)||code===9||code===10||code===13){
-      chars.push(String.fromCharCode(code));
-    } else {
-      chars.push('?'); // mark non-printable but don't drop
-    }
+const PRE  = '1010101011001100';   // 16-bit preamble
+const POST = '0011001101010101';   // 16-bit postamble
+const PRE_LEN  = PRE.length;
+const POST_LEN = POST.length;
+
+// ── helpers ──────────────────────────────────────────────────────────
+const t2b = s => [...s].map(c=>c.charCodeAt(0).toString(2).padStart(8,'0')).join('');
+const b2t = b => {
+  let out='';
+  for(let i=0;i+8<=b.length;i+=8){
+    const v=parseInt(b.slice(i,i+8),2);
+    out += (v>=32&&v<127) ? String.fromCharCode(v) : (v===10||v===13?' ':'?');
   }
-  return chars.join('');
+  return out;
+};
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const hamming = (a,b) => { let e=0; for(let i=0;i<a.length;i++) if(a[i]!==b[i]) e++; return e; };
+
+// ── tab switch ───────────────────────────────────────────────────────
+function setTab(t){
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('on',(t==='s'&&i===0)||(t==='r'&&i===1)));
+  document.getElementById('SP').classList.toggle('on',t==='s');
+  document.getElementById('RP').classList.toggle('on',t==='r');
 }
 
-// ── Mode switch ──────────────────────────────────────────────────────
-function setMode(m){
-  ['senderPanel','receiverPanel'].forEach((id,i)=>{
-    document.getElementById(id).classList.toggle('active',(m==='sender'&&i===0)||(m==='receiver'&&i===1));
-  });
-  document.querySelectorAll('.mode-tab').forEach((t,i)=>
-    t.classList.toggle('active',(m==='sender'&&i===0)||(m==='receiver'&&i===1)));
+// ── sender helpers ────────────────────────────────────────────────────
+function modeChange(){
+  const is=document.getElementById('sMode').value==='text';
+  document.getElementById('sTW').style.display=is?'':'none';
+  document.getElementById('sBW').style.display=is?'none':'';
+  updatePrev();
 }
+['sTxt','sBts','sGap'].forEach(id=>document.getElementById(id).addEventListener('input',updatePrev));
 
-// ── Sender input mode ────────────────────────────────────────────────
-function onModeChange(){
-  const isTxt=document.getElementById('sMode').value==='text';
-  document.getElementById('sTextWrap').style.display=isTxt?'':'none';
-  document.getElementById('sBitsWrap').style.display=isTxt?'none':'';
-  updatePreview();
-}
-['sText','sBits','sGuard'].forEach(id=>
-  document.getElementById(id).addEventListener('input',updatePreview));
-
-function getPayloadBits(){
+function getPayBits(){
   if(document.getElementById('sMode').value==='text'){
-    const t=document.getElementById('sText').value;
-    return textToBits(t||'Hello');
+    const v=document.getElementById('sTxt').value; return t2b(v||'Hi');
   }
-  return document.getElementById('sBits').value.replace(/[^01]/g,'');
+  return document.getElementById('sBts').value.replace(/[^01]/g,'');
 }
 
-function buildPacket(){
-  const payload = getPayloadBits();
-  const guard   = '0'.repeat(parseInt(document.getElementById('sGuard').value)||4);
-  return PREAMBLE + SOP + guard + payload + EOP;
+function buildPkt(){
+  const pay = getPayBits();
+  const gap = '0'.repeat(Math.max(4,parseInt(document.getElementById('sGap').value)||8));
+  return PRE + gap + pay + POST;
 }
 
-function updatePreview(){
-  const payload = getPayloadBits();
-  const guard   = '0'.repeat(parseInt(document.getElementById('sGuard').value)||4);
-  const packet  = PREAMBLE + SOP + guard + payload + EOP;
-  const cc=(bits,cls)=>bits.split('').map(b=>`<span class="${cls}">${b}</span>`).join('');
-  document.getElementById('sPktPrev').innerHTML =
-    cc(PREAMBLE,'bpre') + cc(SOP,'bpre') + cc(guard,'b0') +
-    payload.split('').map(b=>`<span class="b${b}">${b}</span>`).join('') +
-    cc(EOP,'bpost');
-  const isText = document.getElementById('sMode').value==='text';
-  const txt    = isText ? ` "${document.getElementById('sText').value||'Hello'}"` : '';
-  document.getElementById('sPktInfo').textContent =
-    `Total: ${packet.length} bits | Payload: ${payload.length} bits${txt} | Pre+SOP: ${SYNC_WORD.length} | EOP: ${EOP.length}`;
+function updatePrev(){
+  const pay = getPayBits();
+  const gap = '0'.repeat(Math.max(4,parseInt(document.getElementById('sGap').value)||8));
+  const pkt = PRE + gap + pay + POST;
+  const cc=(s,c)=>s.split('').map(b=>`<span class="${c}">${b}</span>`).join('');
+  document.getElementById('sPrev').innerHTML =
+    cc(PRE,'bpx') + cc(gap,'b0') +
+    pay.split('').map(b=>`<span class="b${b}">${b}</span>`).join('') +
+    cc(POST,'bex');
+  const isT=document.getElementById('sMode').value==='text';
+  document.getElementById('sPInfo').textContent =
+    `Total: ${pkt.length} bits | Pre: ${PRE_LEN} | Gap: ${gap.length} | Payload: ${pay.length}${isT?' ("'+document.getElementById('sTxt').value+'"':''} | Post: ${POST_LEN}`;
 }
-updatePreview();
+updatePrev();
 
-// ── Sender: torch / screen flash ─────────────────────────────────────
-let torchStream=null, torchTrack=null, torchOK=false, isSending=false, sendTimer=null;
+// ── SENDER TX ─────────────────────────────────────────────────────────
+let txStream=null, txTrack=null, txTorch=false, txActive=false, txTimer=null;
 
-async function initTorch(){
-  const btn=document.getElementById('btnTorch'); btn.disabled=true;
-  sLog('Requesting camera access…');
+async function initTx(){
+  document.getElementById('btnInit').disabled=true;
+  slog('Requesting camera…');
   try{
-    torchStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
-    torchTrack  = torchStream.getVideoTracks()[0];
-    const caps  = torchTrack.getCapabilities ? torchTrack.getCapabilities() : {};
-    torchOK     = !!caps.torch;
-    sLog(torchOK ? '✓ Hardware torch ready (Android Chrome)!' : 'No torch API — screen flash fallback', torchOK?'ok':'');
-    document.getElementById('torchInfo').textContent = torchOK
-      ? '✓ Hardware torch active (Android Chrome)'
-      : '⚠ Screen flash fallback — point screen at receiver camera';
-    if(torchOK) document.getElementById('torchInfo').style.color='var(--accent2)';
-    setSStatus('ok', torchOK?'TORCH READY':'SCREEN READY');
+    txStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    txTrack  = txStream.getVideoTracks()[0];
+    const caps = txTrack.getCapabilities?.() ?? {};
+    txTorch = !!caps.torch;
+    slog(txTorch?'✓ Hardware torch ready':'No torch — will use screen flash',txTorch?'ok':'');
+    document.getElementById('txInfo').textContent = txTorch
+      ? '✓ Torch ready (Android Chrome)'
+      : '⚠ Using screen flash — aim screen at receiver camera';
+    if(txTorch) document.getElementById('txInfo').style.color='var(--green)';
+    setSS('ok', txTorch?'TORCH':'SCREEN');
   }catch(e){
-    sLog('Camera denied: '+e.message+' — screen flash will be used');
-    torchOK=false; setSStatus('ok','SCREEN READY');
-    document.getElementById('torchInfo').textContent='⚠ Camera denied — using screen flash (no camera needed for sender)';
+    slog('Camera denied — screen flash will be used');
+    txTorch=false; setSS('ok','SCREEN');
   }
   document.getElementById('btnSend').disabled=false;
-  btn.disabled=false;
+  document.getElementById('btnInit').disabled=false;
 }
 
-async function setBit(v){
-  if(torchOK && torchTrack){
-    try{ await torchTrack.applyConstraints({advanced:[{torch:v===1}]}); }catch(e){}
-  }else{
+async function lightSet(on){
+  if(txTorch && txTrack){
+    try{ await txTrack.applyConstraints({advanced:[{torch:on}]}); }catch(_){}
+  } else {
     const o=document.getElementById('flashOverlay');
-    o.style.display  = v===1 ? 'block' : 'none';
-    o.style.background = v===1 ? 'white' : 'black';
+    o.style.cssText=on?'display:block;background:white':'display:none;background:black';
   }
 }
 
-async function sendPacket(){
-  if(isSending) return;
-  const Tb  = parseInt(document.getElementById('sTb').value)||300;
-  const pkt = buildPacket();
-  isSending = true;
-  document.getElementById('btnSend').disabled  = true;
-  document.getElementById('btnStopS').disabled = false;
-  setSStatus('send','TX…');
-  sLog(`Sending ${pkt.length} bits @ Tb=${Tb}ms — "${document.getElementById('sText').value||''}"`)
-  const o=document.getElementById('flashOverlay');
-  if(!torchOK){ o.style.display='block'; o.style.background='black'; }
-  let idx=0;
-  const tick=async()=>{
-    if(!isSending || idx>=pkt.length){
-      await setBit(0);
-      if(!torchOK) o.style.display='none';
-      isSending=false;
-      document.getElementById('btnSend').disabled  = false;
-      document.getElementById('btnStopS').disabled = true;
-      setSStatus('ok','DONE ✓'); setProgress(0);
-      document.getElementById('sProgLbl').textContent='Transmission complete';
-      sLog('✓ Done','ok'); return;
+async function doSend(){
+  if(txActive) return;
+  const Tb  = Math.max(100, parseInt(document.getElementById('sTb').value)||250);
+  const pkt = buildPkt();
+  txActive  = true;
+  document.getElementById('btnSend').disabled=true;
+  document.getElementById('btnStop').disabled=false;
+  setSS('send','TX');
+  slog(`Sending ${pkt.length} bits @ ${Tb}ms — "${document.getElementById('sTxt').value||''}"`);
+  const ov=document.getElementById('flashOverlay');
+  if(!txTorch){ ov.style.display='block'; ov.style.background='black'; }
+
+  let i=0;
+  // Use performance.now() based scheduling for precise timing
+  const startTime = performance.now();
+  function step(){
+    if(!txActive || i>=pkt.length){
+      lightSet(false);
+      if(!txTorch) ov.style.display='none';
+      txActive=false;
+      document.getElementById('btnSend').disabled=false;
+      document.getElementById('btnStop').disabled=true;
+      setSS('ok','DONE ✓'); setP(0);
+      document.getElementById('sLbl').textContent='Done';
+      slog('✓ Sent','ok'); return;
     }
-    await setBit(parseInt(pkt[idx]));
-    setProgress(Math.round(idx/pkt.length*100));
-    document.getElementById('sProgLbl').textContent=`Bit ${idx+1}/${pkt.length}  [${pkt[idx]}]`;
-    idx++; sendTimer=setTimeout(tick,Tb);
-  };
-  tick();
+    lightSet(pkt[i]==='1');
+    setP(Math.round(i/pkt.length*100));
+    document.getElementById('sLbl').textContent=`Bit ${i+1}/${pkt.length} [${pkt[i]}]`;
+    i++;
+    // Schedule next bit at exact time based on start, avoiding drift
+    const nextTime = startTime + i * Tb;
+    const delay = Math.max(0, nextTime - performance.now());
+    txTimer = setTimeout(step, delay);
+  }
+  step();
 }
 
 function stopSend(){
-  clearTimeout(sendTimer); isSending=false; setBit(0);
+  clearTimeout(txTimer); txActive=false; lightSet(false);
   document.getElementById('flashOverlay').style.display='none';
-  document.getElementById('btnSend').disabled  = false;
-  document.getElementById('btnStopS').disabled = true;
-  setSStatus('idle','IDLE'); setProgress(0); sLog('Stopped');
+  document.getElementById('btnSend').disabled=false;
+  document.getElementById('btnStop').disabled=true;
+  setSS('idle','IDLE'); setP(0); slog('Stopped');
 }
-function setProgress(p){ document.getElementById('sProgress').style.width=p+'%'; }
-function setSStatus(t,l){ const e=document.getElementById('sStatus'); e.textContent=l; e.className='sbadge s-'+t; }
-function sLog(msg,t){
-  const log=document.getElementById('sLog'), line=document.createElement('div');
-  if(t==='ok') line.className='ls'; else if(t==='err'||t==='warn') line.className='le';
-  line.textContent='> '+msg; log.appendChild(line); log.scrollTop=log.scrollHeight;
-}
-
-// ─────────────────────────────────────────────────────────────────────
-// RECEIVER
-// ─────────────────────────────────────────────────────────────────────
-let rxStream=null, rxAF=null, rxRunning=false;
-let rxBitBuf   = [];   // display buffer (last 80 bits)
-let rxSamples  = [];   // raw luma samples in current bit window
-let rxBitT0    = 0;    // clock anchor: ms timestamp of the START of bit-0 after lock
-let rxBitIdx   = 0;    // how many bits have been committed since clock anchor
-let rxMinL=255, rxMaxL=0;
-let rxSumL=0, rxSumL2=0, rxSampleCnt=0; // for std-dev based threshold
-let rxHist     = new Int32Array(256);
-let rxGraph    = [];
-let rxPktCnt   = 0;
-let rxState    = 'HUNTING';  // 'HUNTING' | 'RECEIVING'
-let rxHuntBuf  = [];   // recent bits during hunt (max 48)
-let rxPayBits  = [];   // payload bits collected after preamble lock
-let rxFrameN   = 0;
-let rxHuntTs   = 0;    // clock anchor for hunting mode
-
-function rLog(msg,t){
-  const log=document.getElementById('rLog'), line=document.createElement('div');
-  if(t==='ok') line.className='ls'; else if(t==='err'||t==='warn') line.className='le'; else if(t==='pre') line.className='lp';
-  line.textContent='> '+msg; log.appendChild(line); log.scrollTop=log.scrollHeight;
+const setP  = p => document.getElementById('sProg').style.width=p+'%';
+const setSS = (t,l)=>{ const e=document.getElementById('sStatus'); e.textContent=l; e.className='badge b'+t[0]; };
+function slog(m,t){
+  const log=document.getElementById('sLog'), d=document.createElement('div');
+  d.className = t==='ok'?'lok':t==='err'?'lerr':'';
+  d.textContent='> '+m; log.appendChild(d); log.scrollTop=log.scrollHeight;
 }
 
-async function startReceiver(){
-  document.getElementById('btnStartRx').disabled=true;
-  rLog('Requesting camera…');
+// ═══════════════════════════════════════════════════════════════════════
+// RECEIVER — redesigned with continuous luma buffer + correlation
+// ═══════════════════════════════════════════════════════════════════════
+
+let rxStream=null, rxAF=null, rxOn=false;
+let rxPktN=0;
+
+// Continuous luma ring: store {t, luma} for last ~10 seconds worth
+// We never use a frame-rate-dependent clock — we just timestamp each sample
+const RING_MAX = 5000;  // max samples to keep
+let ring = [];          // [{t:ms, v:luma}, ...]
+let ringMin=255, ringMax=0;
+
+// State machine
+let rxState = 'HUNT';   // HUNT | COLLECT
+let lockBitStart = 0;   // performance.now() of the first payload bit's window start
+let lockBitIdx  = 0;    // how many payload bits committed
+let payBits     = [];   // collected payload bits (after preamble)
+let dispBits    = [];   // all bits seen, for display
+let rxFrameN    = 0;
+let graphPts    = [];   // [{y, bit, state}] for canvas
+
+// For hunting: we maintain a decoded-bit stream produced by sampling ring at Tb intervals
+let huntClock   = 0;    // next expected sample time during hunt
+let huntBits    = [];   // recent decoded bits during hunt (for preamble search)
+
+function rlog(m,t){
+  const log=document.getElementById('rLog'), d=document.createElement('div');
+  d.className=t==='ok'?'lok':t==='err'||t==='warn'?'lerr':t==='pre'?'lpre':'';
+  d.textContent='> '+m; log.appendChild(d); log.scrollTop=log.scrollHeight;
+}
+
+async function startRx(){
+  document.getElementById('btnRxStart').disabled=true;
+  rlog('Requesting camera…');
   try{
     rxStream = await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:'environment', width:{ideal:640}, height:{ideal:480}, frameRate:{ideal:60}}
+      video:{facingMode:'environment',width:{ideal:640},height:{ideal:480},frameRate:{ideal:60}}
     });
-    const vid=document.getElementById('videoEl');
-    vid.srcObject=rxStream;
-    await new Promise(r=>vid.onloadedmetadata=r);
-    await vid.play();
+    const v=document.getElementById('vid');
+    v.srcObject=rxStream;
+    await new Promise(r=>v.onloadedmetadata=r);
+    await v.play();
     resetRx();
-    rxRunning=true;
-    document.getElementById('btnStopRx').disabled=false;
-    setRxSt('active','RECEIVING');
-    rLog('✓ Camera active. Hunting for preamble…','ok');
-    rxMain();
+    rxOn=true;
+    document.getElementById('btnRxStop').disabled=false;
+    setRS('active','HUNT');
+    rlog('✓ Camera live. Hunting preamble…','ok');
+    rxLoop();
   }catch(e){
-    rLog('Camera error: '+e.message,'err');
-    document.getElementById('btnStartRx').disabled=false;
+    rlog('Camera error: '+e.message,'err');
+    document.getElementById('btnRxStart').disabled=false;
   }
 }
-function stopReceiver(){
-  rxRunning=false; if(rxAF) cancelAnimationFrame(rxAF);
-  if(rxStream) rxStream.getTracks().forEach(t=>t.stop());
-  rxStream=null; document.getElementById('videoEl').srcObject=null;
-  document.getElementById('btnStartRx').disabled=false;
-  document.getElementById('btnStopRx').disabled=true;
-  setRxSt('idle','IDLE'); hideBanner(); rLog('Stopped');
-}
-function resetRx(){
-  rxBitBuf=[]; rxSamples=[]; rxBitT0=0; rxBitIdx=0;
-  rxMinL=255; rxMaxL=0; rxSumL=0; rxSumL2=0; rxSampleCnt=0;
-  rxHist=new Int32Array(256); rxGraph=[];
-  rxState='HUNTING'; rxHuntBuf=[]; rxPayBits=[];
-  rxFrameN=0; rxHuntTs=0;
-  hideBanner();
-  document.getElementById('rBufCnt').textContent='0';
-  document.getElementById('rxStateLbl').textContent='HUNTING';
-}
-function setRxSt(t,l){ const e=document.getElementById('rStatus'); e.textContent=l; e.className='sbadge s-'+t; }
-function showBanner(){ document.getElementById('preBanner').classList.add('show'); }
-function hideBanner(){ document.getElementById('preBanner').classList.remove('show'); }
 
-// ─────────────────────────────────────────────────────────────────────
-// MAIN RX LOOP
-// ─────────────────────────────────────────────────────────────────────
-function rxMain(){
-  const vid = document.getElementById('videoEl');
-  const off = document.createElement('canvas');
-  off.width  = vid.videoWidth  || 320;
-  off.height = vid.videoHeight || 240;
-  const ctx = off.getContext('2d', {willReadFrequently:true});
+function stopRx(){
+  rxOn=false; cancelAnimationFrame(rxAF);
+  rxStream?.getTracks().forEach(t=>t.stop());
+  rxStream=null; document.getElementById('vid').srcObject=null;
+  document.getElementById('btnRxStart').disabled=false;
+  document.getElementById('btnRxStop').disabled=true;
+  setRS('idle','IDLE'); hideBanner(); rlog('Stopped');
+}
+
+function resetRx(){
+  ring=[]; ringMin=255; ringMax=0;
+  rxState='HUNT'; lockBitStart=0; lockBitIdx=0;
+  payBits=[]; dispBits=[]; rxFrameN=0; graphPts=[];
+  huntClock=0; huntBits=[];
+  hideBanner();
+  document.getElementById('rCnt').textContent='0';
+  document.getElementById('rState').textContent='HUNT';
+}
+
+const setRS=(t,l)=>{ const e=document.getElementById('rStatus'); e.textContent=l; e.className='badge b'+t[0]; };
+const showBanner=()=>document.getElementById('preBanner').classList.add('on');
+const hideBanner=()=>document.getElementById('preBanner').classList.remove('on');
+
+// ── MAIN LOOP ─────────────────────────────────────────────────────────
+function rxLoop(){
+  const vid=document.getElementById('vid');
+  const off=document.createElement('canvas');
+  off.width=vid.videoWidth||320; off.height=vid.videoHeight||240;
+  const ctx=off.getContext('2d',{willReadFrequently:true});
 
   function frame(ts){
-    if(!rxRunning) return;
-    rxAF = requestAnimationFrame(frame);
+    if(!rxOn) return;
+    rxAF=requestAnimationFrame(frame);
     rxFrameN++;
 
-    // ── 1. Capture frame & compute ROI luma ──────────────────────────
-    ctx.drawImage(vid, 0, 0, off.width, off.height);
-    const rp = parseInt(document.getElementById('rROI').value)/100;
-    const rW = Math.floor(off.width*rp),  rH = Math.floor(off.height*rp);
-    const rX = Math.floor((off.width-rW)/2), rY = Math.floor((off.height-rH)/2);
-    const px = ctx.getImageData(rX,rY,rW,rH).data;
-    let lumSum=0; const cnt=px.length>>2;
-    for(let i=0;i<px.length;i+=4)
-      lumSum += ((77*px[i] + 150*px[i+1] + 29*px[i+2]) >> 8);
-    const luma = lumSum / cnt;
+    // 1. Compute ROI luma for this frame
+    ctx.drawImage(vid,0,0,off.width,off.height);
+    const rp=parseInt(document.getElementById('rROI').value)/100;
+    const rW=Math.floor(off.width*rp), rH=Math.floor(off.height*rp);
+    const rX=Math.floor((off.width-rW)/2), rY=Math.floor((off.height-rH)/2);
+    const px=ctx.getImageData(rX,rY,rW,rH).data;
+    let s=0; const n=px.length>>2;
+    for(let i=0;i<px.length;i+=4) s+=((77*px[i]+150*px[i+1]+29*px[i+2])>>8);
+    const luma=s/n;
 
-    // ── 2. Update running statistics ─────────────────────────────────
-    // FIX 2: Correct EMA — use separate tracked min/max, decay slowly
-    rxSampleCnt++;
-    rxSumL  += luma;
-    rxSumL2 += luma*luma;
-    if(luma < rxMinL) rxMinL = luma;
-    if(luma > rxMaxL) rxMaxL = luma;
-    // Slow EMA decay so min/max track actual range across transmission
-    rxMinL = rxMinL * 0.9995 + luma * 0.0005;
-    rxMaxL = rxMaxL * 0.9995 + luma * 0.0005;
-    rxMinL = Math.max(0, rxMinL);
-    rxMaxL = Math.min(255, rxMaxL);
-    if(rxMaxL - rxMinL < 10) rxMaxL = rxMinL + 10; // ensure minimum contrast headroom
-    rxHist[Math.min(255, luma|0)]++;
+    // 2. Push into ring buffer
+    ring.push({t:ts, v:luma});
+    if(ring.length>RING_MAX) ring.shift();
 
-    const threshold = getThreshold();
+    // 3. Update min/max with true observed range (no EMA distortion)
+    if(luma<ringMin) ringMin=luma;
+    if(luma>ringMax) ringMax=luma;
+    // Very slow decay toward center so old extremes don't permanently dominate
+    ringMin = ringMin*0.9998 + luma*0.0002;
+    ringMax = ringMax*0.9998 + luma*0.0002;
+    ringMin=Math.max(0,ringMin); ringMax=Math.min(255,ringMax);
+    const span=ringMax-ringMin;
+    if(span<8){ ringMax=ringMin+8; } // minimum contrast headroom
 
-    // ── 3. UI update (throttled every 3 frames) ───────────────────────
-    if(rxFrameN % 3 === 0){
-      document.getElementById('lumaBar').style.width  = (luma/255*100)+'%';
-      document.getElementById('lumaVal').textContent   = luma.toFixed(0);
-      document.getElementById('minLDisp').textContent  = rxMinL.toFixed(0);
-      document.getElementById('maxLDisp').textContent  = rxMaxL.toFixed(0);
-      document.getElementById('thVal').textContent     = threshold.toFixed(0);
+    // Threshold is always midpoint of observed range
+    const threshold=(ringMin+ringMax)/2;
+
+    // 4. UI (throttled)
+    if(rxFrameN%4===0){
+      document.getElementById('lBar').style.width=(luma/255*100)+'%';
+      document.getElementById('lVal').textContent=luma.toFixed(0);
+      document.getElementById('lMin').textContent=ringMin.toFixed(0);
+      document.getElementById('lMax').textContent=ringMax.toFixed(0);
+      document.getElementById('lTh').textContent=threshold.toFixed(0);
     }
 
-    // ── 4. Accumulate luma sample in current bit window ───────────────
-    rxSamples.push(luma);
-    const rTb = parseInt(document.getElementById('rTbIn').value) || 300;
+    const Tb=Math.max(100,parseInt(document.getElementById('rTb').value)||250);
 
-    if(rxState === 'HUNTING'){
-      // Free-running clock: anchor advances by exactly Tb each window
-      if(rxHuntTs === 0) rxHuntTs = ts;
-      if(ts - rxHuntTs >= rTb){
-        rxHuntTs += rTb;  // FIX: advance by Tb, not reset to ts → no drift
-        const samples = rxSamples.slice(); rxSamples = [];
-        commitHuntBit(samples, threshold, ts);
+    // ─────────────────────────────────────────────────────────────────
+    // 5. Process bit windows
+    //
+    // KEY INSIGHT: Instead of trying to lock a clock in real-time, we
+    // keep a running hunt clock. On each Tb tick we:
+    //   a) Average all ring samples in [huntClock, huntClock+Tb)
+    //   b) Threshold → 1 bit
+    //   c) Push to huntBits, search for preamble
+    //   d) On preamble match → switch to COLLECT, keep counting from there
+    // ─────────────────────────────────────────────────────────────────
+    if(rxState==='HUNT'){
+      if(huntClock===0) huntClock=ts;
+      // Fire for every Tb window that has completely elapsed
+      while(ts - huntClock >= Tb){
+        const winStart=huntClock, winEnd=huntClock+Tb;
+        huntClock=winEnd;  // advance BEFORE processing (anchor-based)
+
+        // Average ring samples in this window
+        const winSamples=ring.filter(s=>s.t>=winStart && s.t<winEnd);
+        document.getElementById('lSpb').textContent=winSamples.length;
+        if(winSamples.length===0) continue;
+
+        const avg=winSamples.reduce((a,s)=>a+s.v,0)/winSamples.length;
+        const bit=avg>threshold?1:0;
+
+        document.getElementById('bitLBar')?.remove(); // not used
+        if(rxFrameN%4===0){
+          document.getElementById('lBar').style.width=(avg/255*100)+'%';
+        }
+
+        dispBits.push(bit);
+        if(dispBits.length>80) dispBits.shift();
+        huntBits.push(bit);
+        if(huntBits.length>64) huntBits.shift();
+
+        graphPts.push({y:avg, bit, th:threshold, state:'H'});
+        if(graphPts.length>120) graphPts.shift();
+
+        renderBits();
+        drawGraph();
+
+        // Search for preamble in recent hunt bits
+        const hStr=huntBits.join('');
+        // Use fuzzy match: allow up to 2 bit errors in preamble
+        let bestMatch=-1, bestErr=99;
+        for(let i=0;i+PRE_LEN<=hStr.length;i++){
+          const e=hamming(hStr.slice(i,i+PRE_LEN),PRE);
+          if(e<bestErr){ bestErr=e; bestMatch=i; }
+        }
+
+        if(bestErr<=2 && bestMatch>=0){
+          // PREAMBLE FOUND
+          // The preamble ends at huntBits[bestMatch + PRE_LEN - 1]
+          // That window ended at: huntClock - (huntBits.length - bestMatch - PRE_LEN) * Tb
+          const bitsAfterPreEnd = huntBits.length - (bestMatch + PRE_LEN);
+          // lockBitStart = the clock time at which the first payload bit window STARTED
+          lockBitStart = huntClock - bitsAfterPreEnd * Tb;
+          lockBitIdx   = 0;
+          payBits      = [];
+
+          // Seed payload with any bits already collected after preamble end
+          const extraBits = huntBits.slice(bestMatch + PRE_LEN);
+          extraBits.forEach(b=>{ payBits.push(b); lockBitIdx++; });
+
+          rxState='COLLECT';
+          huntBits=[];
+          document.getElementById('rState').textContent='LOCKED';
+          setRS('pre','LOCKED');
+          showBanner();
+          rlog(`⚡ PREAMBLE LOCKED (${bestErr} bit errors) — collecting payload…`,'pre');
+        }
+        document.getElementById('rCnt').textContent=dispBits.length;
       }
     } else {
-      // FIX 3: Hard-anchored clock from rxBitT0
-      // expectedEnd for the *current* (rxBitIdx-th) window:
-      const expectedEnd = rxBitT0 + (rxBitIdx + 1) * rTb;
+      // ── COLLECT mode ────────────────────────────────────────────────
+      // Use lockBitStart as absolute anchor — never drift
+      const expectedEnd = lockBitStart + (lockBitIdx + 1) * Tb;
       if(ts >= expectedEnd){
-        const samples = rxSamples.slice(); rxSamples = [];
-        // FIX 4: Calculate how many windows elapsed (frame-drop recovery)
-        const windowsElapsed = Math.floor((ts - rxBitT0) / rTb);
-        commitRxBit(samples, threshold);
-        // Fill skipped windows with repeated last bit (best guess)
-        while(rxBitIdx < windowsElapsed){
-          const lastBit = rxPayBits.length > 0 ? rxPayBits[rxPayBits.length-1] : 0;
-          appendPayBit(lastBit);
+        const winStart = lockBitStart + lockBitIdx * Tb;
+        const winEnd   = lockBitStart + (lockBitIdx + 1) * Tb;
+
+        // Handle frame drops: catch up if multiple windows elapsed
+        let wi = lockBitIdx;
+        while(lockBitStart + (wi+1)*Tb <= ts){
+          const ws = lockBitStart + wi*Tb;
+          const we = lockBitStart + (wi+1)*Tb;
+          const wsamp = ring.filter(s=>s.t>=ws && s.t<we);
+          document.getElementById('lSpb').textContent=wsamp.length;
+
+          const avg = wsamp.length>0
+            ? wsamp.reduce((a,s)=>a+s.v,0)/wsamp.length
+            : (payBits.length>0 ? (payBits[payBits.length-1]===1?ringMax:ringMin) : ringMin);
+
+          const bit=avg>threshold?1:0;
+          payBits.push(bit); lockBitIdx++;
+
+          dispBits.push(bit);
+          if(dispBits.length>80) dispBits.shift();
+
+          graphPts.push({y:avg, bit, th:threshold, state:'R'});
+          if(graphPts.length>120) graphPts.shift();
+
+          document.getElementById('rCnt').textContent=dispBits.length;
+          renderBits();
+          drawGraph();
+          wi++;
+        }
+
+        // Try to decode after each new bit
+        tryDecode();
+
+        // Safety: too many bits collected → give up
+        if(payBits.length > 2048){
+          rlog('⚠ Too many bits without postamble — resetting','warn');
+          backToHunt();
         }
       }
     }
@@ -553,262 +610,121 @@ function rxMain(){
   requestAnimationFrame(frame);
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// HUNTING MODE — commit one bit, search for preamble
-// ─────────────────────────────────────────────────────────────────────
-function commitHuntBit(samples, threshold, ts){
-  if(samples.length === 0) return;
-  const avg = samples.reduce((a,b)=>a+b,0) / samples.length;
-  const bit = avg > threshold ? 1 : 0;
-
-  // Update UI
-  document.getElementById('spb').textContent = samples.length;
-  if(rxFrameN%3===0){
-    document.getElementById('bitLBar').style.width = (avg/255*100)+'%';
-    document.getElementById('bitLVal').textContent  = avg.toFixed(0);
-  }
-
-  // Store for display
-  rxBitBuf.push(bit);
-  if(rxBitBuf.length > 80) rxBitBuf.shift();
-  rxHuntBuf.push(bit);
-  if(rxHuntBuf.length > 48) rxHuntBuf.shift();  // keep 3× sync word length
-
-  rxGraph.push({luma:avg, bit, threshold, state:'H'});
-  if(rxGraph.length > 120) rxGraph.shift();
-  renderBitDisp();
-  drawGraph();
-  document.getElementById('rBufCnt').textContent = rxBitBuf.length;
-
-  // Search for PREAMBLE+SOP in recent bits
-  const recent = rxHuntBuf.join('');
-  const pi = recent.lastIndexOf(SYNC_WORD);
-  if(pi >= 0){
-    // ── PREAMBLE LOCKED ──
-    rxState = 'RECEIVING';
-
-    // FIX 3: rxBitT0 = timestamp of the END of the SOP bit window
-    // i.e. the clock anchor = rxHuntTs (which already points to the next window start)
-    rxBitT0  = rxHuntTs;
-    rxBitIdx = 0;
-    rxPayBits = [];
-
-    // Any bits collected AFTER the SOP in rxHuntBuf are early payload bits
-    const extra = rxHuntBuf.slice(pi + SYNC_WORD.length);
-    if(extra.length > 0){
-      extra.forEach(b => appendPayBit(b));
-    }
-    rxHuntBuf = [];
-
-    document.getElementById('rxStateLbl').textContent = 'LOCKED';
-    setRxSt('pre','LOCKED');
-    showBanner();
-    rLog(`⚡ PREAMBLE + SOP LOCKED! (${SYNC_WORD}) — collecting payload…`, 'pre');
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────
-// RECEIVING MODE — commit one bit into payload buffer
-// ─────────────────────────────────────────────────────────────────────
-function commitRxBit(samples, threshold){
-  if(samples.length === 0) samples = [rxMinL]; // fallback for dropped frames
-  const avg = samples.reduce((a,b)=>a+b,0) / samples.length;
-  const bit = avg > threshold ? 1 : 0;
-
-  document.getElementById('spb').textContent = samples.length;
-  if(rxFrameN%3===0){
-    document.getElementById('bitLBar').style.width = (avg/255*100)+'%';
-    document.getElementById('bitLVal').textContent  = avg.toFixed(0);
-  }
-
-  rxGraph.push({luma:avg, bit, threshold, state:'R'});
-  if(rxGraph.length > 120) rxGraph.shift();
-  drawGraph();
-
-  appendPayBit(bit);
-}
-
-// ─────────────────────────────────────────────────────────────────────
-// Append one bit to payload, update display, check for EOP
-// ─────────────────────────────────────────────────────────────────────
-function appendPayBit(bit){
-  rxBitIdx++;
-  rxPayBits.push(bit);
-  rxBitBuf.push(bit);
-  if(rxBitBuf.length > 80) rxBitBuf.shift();
-  renderBitDisp();
-  document.getElementById('rBufCnt').textContent = rxBitBuf.length;
-
-  // Check for EOP
-  tryDecode();
-
-  // Safety valve — if payload grows beyond limit, give up and re-hunt
-  const maxPay = 2048 + EOP.length + 32;
-  if(rxPayBits.length > maxPay){
-    rLog('⚠ Max payload exceeded — resetting to HUNTING','warn');
-    backToHunting();
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────
-// DECODE — search for EOP in accumulated payload bits
-// ─────────────────────────────────────────────────────────────────────
+// ── DECODE ───────────────────────────────────────────────────────────
 function tryDecode(){
-  const ps = rxPayBits.join('');
+  if(payBits.length < POST_LEN + 8) return;
+  const ps = payBits.join('');
 
-  // FIX 5: Find EOP with configurable error tolerance
-  const errTol = parseInt(document.getElementById('rErrTol').value) || 2;
-  const eopIdx = findWithErrors(ps, EOP, errTol);
-  if(eopIdx < 0) return;                 // EOP not found yet
-  if(eopIdx < 8) return;                 // payload too short (need at least 1 byte)
+  // Find postamble with up to 3 bit error tolerance
+  let bestIdx=-1, bestErr=99;
+  for(let i=8; i+POST_LEN<=ps.length; i++){
+    const e=hamming(ps.slice(i,i+POST_LEN),POST);
+    if(e<bestErr){ bestErr=e; bestIdx=i; }
+  }
+  if(bestErr>3) return;  // no good postamble found yet
 
-  // FIX 2: DO NOT strip leading zeros — they are real payload bits!
-  // Guard zeros were only inserted between SOP and payload on the sender side.
-  // The receiver already starts collecting AFTER SOP, so guard zeros arrive
-  // as the first bits of rxPayBits. Count them by checking how many leading
-  // zeros precede the first '1' bit, up to the configured guard maximum.
-  // We strip exactly the guard zeros — no more.
-  const guardMax = 16; // max guard zeros we'd ever send
+  // Extract payload: everything before postamble
+  const raw = ps.slice(0, bestIdx);
+
+  // Strip leading gap zeros (the N gap bits from sender)
+  // We strip AT MOST (gap configured) zeros from the front
+  // Default gap = 8, max = 32
+  const maxGap = 32;
   let start = 0;
-  // Count leading zeros but cap at guardMax to protect real payload
-  while(start < Math.min(guardMax, eopIdx) && ps[start] === '0') start++;
+  while(start < Math.min(maxGap, raw.length) && raw[start]==='0') start++;
 
-  const payload = ps.slice(start, eopIdx);
-  if(payload.length < 8){ rLog('Decode: payload too short after guard strip','warn'); return; }
-  if(payload.length % 8 !== 0){
-    rLog(`⚠ Payload ${payload.length} bits not byte-aligned — possible bit slip`, 'warn');
+  const payload = raw.slice(start);
+  if(payload.length < 8){
+    rlog(`Payload too short (${payload.length} bits) after gap strip (stripped ${start})`, 'warn');
+    return;
   }
 
-  rxPktCnt++;
-  document.getElementById('rPktCnt').textContent = rxPktCnt;
+  // Decode
+  const txt = b2t(payload);
+  // Check if meaningful text (more than half printable non-'?')
+  const printable = txt.replace(/\?/g,'').length;
+  const isText = printable > txt.length * 0.5;
 
-  const textOut = bitsToText(payload);
-  const hasPrintable = textOut.length > 0 && textOut.replace(/\?/g,'').length > 0;
+  rxPktN++;
+  document.getElementById('rPkts').textContent=rxPktN;
 
-  rLog(`✓ Packet #${rxPktCnt} decoded! Text: "${hasPrintable ? textOut : '[binary]'}" (${payload.length} bits)`, 'ok');
+  rlog(`✓ PKT #${rxPktN}: "${isText?txt:'[binary]'}" (${payload.length} bits, postamble err=${bestErr})`, 'ok');
 
-  document.getElementById('rResultArea').innerHTML = `
-    <div class="result-box">
-      <div class="rl">✓ Decoded Message — Packet #${rxPktCnt}</div>
-      ${hasPrintable ? `<div class="rt">${esc(textOut)}</div>` : ''}
+  document.getElementById('rResult').innerHTML=`
+    <div class="result">
+      <div class="rl">✓ DECODED MESSAGE — PKT #${rxPktN}</div>
+      ${isText ? `<div class="rt">${esc(txt)}</div>` : ''}
       <div class="rb">${payload}</div>
-      <div class="rmeta">
+      <div class="rm">
         Bits: ${payload.length} &nbsp;|&nbsp;
         Bytes: ${Math.floor(payload.length/8)} &nbsp;|&nbsp;
-        Guard stripped: ${start} &nbsp;|&nbsp;
-        Packet #${rxPktCnt}
+        Gap stripped: ${start} &nbsp;|&nbsp;
+        Post-err: ${bestErr}
       </div>
     </div>`;
 
-  backToHunting();
-  rLog('Hunting for next preamble…');
+  backToHunt();
+  rlog('Hunting for next preamble…');
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// FIX 5: Fuzzy EOP search with hamming distance tolerance
-// Returns index of first occurrence of pattern (with ≤maxErr bit errors),
-// or -1 if not found.
-// ─────────────────────────────────────────────────────────────────────
-function findWithErrors(haystack, needle, maxErr){
-  const nLen = needle.length;
-  for(let i=0; i+nLen<=haystack.length; i++){
-    let errs=0;
-    for(let j=0;j<nLen;j++){
-      if(haystack[i+j] !== needle[j]) errs++;
-      if(errs > maxErr) break;
-    }
-    if(errs <= maxErr) return i;
-  }
-  return -1;
+function backToHunt(){
+  rxState='HUNT'; huntClock=0; huntBits=[]; payBits=[];
+  hideBanner(); setRS('active','HUNT');
+  document.getElementById('rState').textContent='HUNT';
 }
 
-function backToHunting(){
-  rxState='HUNTING'; rxHuntTs=0; rxHuntBuf=[]; rxPayBits=[];
-  hideBanner(); setRxSt('active','RECEIVING');
-  document.getElementById('rxStateLbl').textContent='HUNTING';
+// ── BIT DISPLAY ───────────────────────────────────────────────────────
+function renderBits(){
+  const el=document.getElementById('rBits');
+  if(!dispBits.length){ el.innerHTML='–'; return; }
+  el.innerHTML=dispBits.map(b=>`<span class="b${b}">${b}</span>`).join('');
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// THRESHOLD COMPUTATION
-// ─────────────────────────────────────────────────────────────────────
-function getThreshold(){
-  const mode = document.getElementById('rThresh').value;
-  if(mode === 'fixed') return 128;
-
-  // FIX 2: Correct adaptive threshold — simple midpoint of observed min/max
-  if(mode === 'adaptive'){
-    return (rxMinL + rxMaxL) / 2;
-  }
-
-  // Otsu's method on histogram
-  const total = rxHist.reduce((a,b)=>a+b,0);
-  if(total < 200) return (rxMinL + rxMaxL) / 2; // not enough data yet
-  let sumAll=0;
-  for(let i=0;i<256;i++) sumAll += i * rxHist[i];
-  let wB=0, sB=0, best=0, bestT=(rxMinL+rxMaxL)/2;
-  for(let t=0;t<256;t++){
-    wB += rxHist[t]; if(!wB) continue;
-    const wF = total - wB; if(!wF) break;
-    sB += t * rxHist[t];
-    const mB=sB/wB, mF=(sumAll-sB)/wF;
-    const v = wB * wF * (mB-mF) * (mB-mF);
-    if(v > best){ best=v; bestT=t; }
-  }
-  return bestT;
-}
-
-// ── Render bit display ───────────────────────────────────────────────
-function renderBitDisp(){
-  const el = document.getElementById('rBitDisp');
-  if(!rxBitBuf.length){ el.innerHTML='–'; return; }
-  el.innerHTML = rxBitBuf.map(b=>`<span class="b${b}">${b}</span>`).join('');
-}
-
-// ── Debug signal graph ───────────────────────────────────────────────
+// ── GRAPH ─────────────────────────────────────────────────────────────
 function drawGraph(){
-  const cv=document.getElementById('debugCanvas');
+  const cv=document.getElementById('gc');
+  if(!cv.width||!cv._init){
+    cv.width=cv.offsetWidth||460; cv._init=true;
+  }
   const ctx=cv.getContext('2d');
-  const W=cv.width, H=cv.height;
+  const W=cv.width, H=cv.height||80;
   ctx.fillStyle='#020c14'; ctx.fillRect(0,0,W,H);
-  const n=rxGraph.length; if(n<2) return;
+  const n=graphPts.length; if(n<2) return;
 
-  // Min/max normalisation lines
-  const lo=rxMinL, hi=rxMaxL;
-  const norm=v=>H - Math.max(0,Math.min(1,(v-lo)/(hi-lo||1))) * H;
+  // Normalize y based on current observed range
+  const span=ringMax-ringMin||10;
+  const ny=v=>H-Math.max(0,Math.min(1,(v-ringMin)/span))*H;
 
   // Threshold line
-  const th=rxGraph[n-1].threshold;
-  const thY=norm(th);
-  ctx.strokeStyle='rgba(255,107,53,.6)'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+  const thY=ny(graphPts[n-1].th);
+  ctx.strokeStyle='rgba(255,107,53,.6)'; ctx.lineWidth=1; ctx.setLineDash([4,3]);
   ctx.beginPath(); ctx.moveTo(0,thY); ctx.lineTo(W,thY); ctx.stroke(); ctx.setLineDash([]);
 
-  // Luma line
+  // Luma curve
   ctx.strokeStyle='#00d4ff'; ctx.lineWidth=1.5; ctx.beginPath();
-  rxGraph.forEach((d,i)=>{
-    const x=(i/(n-1))*W, y=norm(d.luma);
-    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  graphPts.forEach((p,i)=>{
+    const x=(i/(n-1))*W, y=ny(p.y);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
   });
   ctx.stroke();
 
-  // Bit state dots (green=1, orange=0; solid=RECEIVING, faded=HUNTING)
-  rxGraph.forEach((d,i)=>{
-    const x=(i/(n-1))*W, y=norm(d.luma);
-    const isRx = d.state==='R';
-    ctx.fillStyle = d.bit===1
-      ? (isRx ? '#00ff9d' : 'rgba(0,255,157,.35)')
-      : (isRx ? '#ff6b35' : 'rgba(255,107,53,.25)');
-    ctx.beginPath(); ctx.arc(x,y,isRx?3:2,0,Math.PI*2); ctx.fill();
+  // Bit markers
+  graphPts.forEach((p,i)=>{
+    const x=(i/(n-1))*W, y=ny(p.y);
+    const isR=p.state==='R';
+    ctx.fillStyle=p.bit===1?(isR?'#00ff9d':'rgba(0,255,157,.4)'):(isR?'#ff6b35':'rgba(255,107,53,.3)');
+    ctx.beginPath(); ctx.arc(x,y,isR?3.5:2,0,Math.PI*2); ctx.fill();
   });
 
-  // State label
   ctx.font='9px Share Tech Mono';
-  ctx.fillStyle = rxState==='HUNTING' ? 'rgba(0,212,255,.8)' : 'rgba(255,224,102,.95)';
-  ctx.fillText(rxState, 4, 12);
-  ctx.fillStyle='rgba(255,107,53,.7)';
-  ctx.fillText('— THRESH', 4, 24);
+  ctx.fillStyle=rxState==='HUNT'?'rgba(0,212,255,.8)':'rgba(255,224,102,.9)';
+  ctx.fillText(rxState,4,11);
+  ctx.fillStyle='rgba(255,107,53,.6)';
+  ctx.fillText('─ THRESH',4,23);
 }
 
-const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+// Fix canvas width on resize
+window.addEventListener('resize',()=>{ const cv=document.getElementById('gc'); if(cv) cv._init=false; });
 </script>
 </body>
 </html>
