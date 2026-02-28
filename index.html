@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-    <meta name="color-scheme" content="dark" />
+  <meta name="color-scheme" content="dark" />
   <meta name="theme-color" content="#090b0e" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>LI-FI // OWC TERMINAL</title>
@@ -10,12 +10,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
   <style>
-/* =====================================================
-   LI-FI OWC TERMINAL — style.css
-   Aesthetic: Retro-futuristic communications hardware
-   Fonts: Orbitron (display) + Share Tech Mono (body)
-   ===================================================== */
-
 :root {
   --bg:         #090b0e;
   --bg2:        #0d1117;
@@ -41,9 +35,7 @@
   --radius:     4px;
   --trans:      0.2s ease;
 }
-
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
 html, body {
   width: 100%; height: 100%;
   background: var(--bg);
@@ -52,26 +44,19 @@ html, body {
   font-size: 13px;
   overflow-x: hidden;
 }
-
-/* ── Scanlines CRT overlay ── */
 .scanlines {
   pointer-events: none;
   position: fixed; inset: 0; z-index: 9999;
   background: repeating-linear-gradient(
     to bottom,
-    transparent 0px,
-    transparent 2px,
-    rgba(0,0,0,0.08) 2px,
-    rgba(0,0,0,0.08) 4px
+    transparent 0px, transparent 2px,
+    rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px
   );
 }
-
 .hidden { display: none !important; }
 .dim { color: var(--text-dim); }
 
-/* =====================================================
-   BOOT SCREEN
-   ===================================================== */
+/* BOOT */
 #boot-screen {
   position: fixed; inset: 0; z-index: 1000;
   display: flex; align-items: center; justify-content: center;
@@ -103,27 +88,15 @@ html, body {
   overflow: hidden; margin-top: 20px;
 }
 .boot-bar {
-  height: 100%;
-  width: 0%;
+  height: 100%; width: 0%;
   background: linear-gradient(90deg, var(--amber), var(--cyan));
   box-shadow: 0 0 10px var(--amber);
   transition: width 0.05s linear;
 }
-.boot-status {
-  font-size: 10px;
-  color: var(--text-dim);
-  letter-spacing: 0.2em;
-}
+.boot-status { font-size: 10px; color: var(--text-dim); letter-spacing: 0.2em; }
 
-/* =====================================================
-   APP SHELL
-   ===================================================== */
-#app {
-  display: flex; flex-direction: column;
-  min-height: 100vh;
-}
-
-/* ── Header ── */
+/* APP SHELL */
+#app { display: flex; flex-direction: column; min-height: 100vh; }
 .app-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 10px 20px;
@@ -139,32 +112,19 @@ html, body {
   text-shadow: 0 0 20px var(--amber-dim);
   letter-spacing: 0.15em;
 }
-.logo-tag {
-  font-size: 9px; color: var(--text-dim);
-  letter-spacing: 0.2em; text-transform: uppercase;
-}
+.logo-tag { font-size: 9px; color: var(--text-dim); letter-spacing: 0.2em; text-transform: uppercase; }
 .mode-toggle { display: flex; gap: 4px; }
 .mode-btn {
-  font-family: var(--font-disp);
-  font-size: 10px; font-weight: 700;
-  letter-spacing: 0.12em;
-  padding: 6px 14px;
-  border: 1px solid var(--border2);
-  background: transparent;
-  color: var(--text-dim);
-  cursor: pointer; border-radius: var(--radius);
+  font-family: var(--font-disp); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.12em; padding: 6px 14px;
+  border: 1px solid var(--border2); background: transparent;
+  color: var(--text-dim); cursor: pointer; border-radius: var(--radius);
   transition: all var(--trans);
 }
-.mode-btn:hover {
-  border-color: var(--amber);
-  color: var(--amber);
-  background: var(--amber-glow);
-}
+.mode-btn:hover { border-color: var(--amber); color: var(--amber); background: var(--amber-glow); }
 .mode-btn.active {
-  border-color: var(--amber);
-  color: var(--amber);
-  background: var(--amber-glow);
-  box-shadow: 0 0 12px var(--amber-dim);
+  border-color: var(--amber); color: var(--amber);
+  background: var(--amber-glow); box-shadow: 0 0 12px var(--amber-dim);
 }
 .header-right { display: flex; align-items: center; gap: 6px; }
 .signal-dot {
@@ -177,29 +137,31 @@ html, body {
 .signal-dot.error  { background: var(--red);   box-shadow: 0 0 8px var(--red); }
 .signal-label { font-size: 9px; letter-spacing: 0.2em; color: var(--text-dim); }
 
-/* ── Panels ── */
+/* PANELS */
 .panel { display: none; padding: 16px 20px; flex: 1; }
 .panel.active { display: block; }
 .panel-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
   max-width: 1100px; margin: 0 auto;
 }
-@media (max-width: 720px) {
-  .panel-grid { grid-template-columns: 1fr; }
-}
+@media (max-width: 720px) { .panel-grid { grid-template-columns: 1fr; } }
 
-/* ── Section Labels ── */
 .section-label {
-  font-family: var(--font-mono);
-  font-size: 9px; letter-spacing: 0.25em;
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.25em;
   color: var(--cyan); text-transform: uppercase;
   margin-bottom: 8px; margin-top: 16px;
 }
 .section-label:first-child { margin-top: 0; }
 
-/* ── Textarea ── */
+/* Protocol tag — new: show encoding mode */
+.encoding-tag {
+  display: inline-block; font-size: 8px; letter-spacing: 0.15em;
+  padding: 2px 6px; border-radius: 2px;
+  background: var(--cyan-dim); color: var(--cyan);
+  margin-left: 8px; vertical-align: middle;
+  text-transform: uppercase;
+}
+
 textarea {
   width: 100%;
   background: var(--bg3); border: 1px solid var(--border2);
@@ -212,7 +174,6 @@ textarea:focus { border-color: var(--amber); }
 textarea::placeholder { color: var(--text-dim); }
 .char-count { text-align: right; font-size: 9px; color: var(--text-dim); margin-top: 4px; }
 
-/* ── Binary Display ── */
 .binary-display {
   background: var(--bg3); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 10px 12px;
@@ -223,25 +184,25 @@ textarea::placeholder { color: var(--text-dim); }
 .binary-display .bit-1 { color: var(--amber); }
 .binary-display .bit-0 { color: var(--amber-dim); }
 
-/* ── Protocol Frame Display ── */
 .frame-display {
   display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
   background: var(--bg3); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 10px 12px;
   font-size: 10px; min-height: 44px;
 }
-.preamble-label, .data-label, .postamble-label {
+.preamble-label, .data-label, .postamble-label, .checksum-label {
   font-size: 8px; letter-spacing: 0.15em;
   padding: 2px 5px; border-radius: 2px; text-transform: uppercase;
 }
 .preamble-label  { background: var(--cyan-dim);  color: var(--cyan); }
 .data-label      { background: var(--amber-dim); color: var(--amber); }
 .postamble-label { background: var(--red-dim);   color: var(--red); }
+.checksum-label  { background: var(--green-dim); color: var(--green); }
 .frame-preamble  { color: var(--cyan); letter-spacing: 0.1em; }
 .frame-data      { color: var(--amber); word-break: break-all; flex: 1; }
 .frame-postamble { color: var(--red); letter-spacing: 0.1em; }
+.frame-checksum  { color: var(--green); letter-spacing: 0.1em; }
 
-/* ── Buttons ── */
 .btn-row { display: flex; gap: 8px; margin-top: 14px; }
 .action-btn {
   font-family: var(--font-disp); font-size: 11px; font-weight: 700;
@@ -249,33 +210,15 @@ textarea::placeholder { color: var(--text-dim); }
   border-radius: var(--radius); border: 1px solid;
   cursor: pointer; transition: all var(--trans); flex: 1;
 }
-.action-btn.primary {
-  border-color: var(--amber); color: var(--amber);
-  background: var(--amber-glow);
-}
-.action-btn.primary:hover:not(:disabled) {
-  background: var(--amber); color: var(--bg);
-  box-shadow: 0 0 20px var(--amber);
-}
-.action-btn.secondary {
-  border-color: var(--border2); color: var(--text-dim); background: transparent;
-}
-.action-btn.secondary:hover {
-  border-color: var(--cyan); color: var(--cyan); background: var(--cyan-glow);
-}
-.action-btn.danger {
-  border-color: var(--red); color: var(--red); background: var(--red-dim);
-}
-.action-btn.danger:hover {
-  background: var(--red); color: var(--bg);
-}
-.action-btn:disabled {
-  opacity: 0.35; cursor: not-allowed;
-}
+.action-btn.primary   { border-color: var(--amber); color: var(--amber); background: var(--amber-glow); }
+.action-btn.primary:hover:not(:disabled) { background: var(--amber); color: var(--bg); box-shadow: 0 0 20px var(--amber); }
+.action-btn.secondary { border-color: var(--border2); color: var(--text-dim); background: transparent; }
+.action-btn.secondary:hover { border-color: var(--cyan); color: var(--cyan); background: var(--cyan-glow); }
+.action-btn.danger    { border-color: var(--red); color: var(--red); background: var(--red-dim); }
+.action-btn.danger:hover { background: var(--red); color: var(--bg); }
+.action-btn:disabled  { opacity: 0.35; cursor: not-allowed; }
 
-/* =====================================================
-   SENDER — Visual Indicator
-   ===================================================== */
+/* SENDER */
 .flashlight-indicator-wrap {
   display: flex; flex-direction: column; align-items: center; gap: 14px;
   padding: 24px; background: var(--bg3); border: 1px solid var(--border);
@@ -288,18 +231,14 @@ textarea::placeholder { color: var(--text-dim); }
 .indicator-core {
   width: 40px; height: 40px; border-radius: 50%;
   background: var(--bg2); border: 2px solid var(--border2);
-  transition: all 0.1s ease;
-  z-index: 2;
+  transition: all 0.1s ease; z-index: 2;
 }
 .indicator-ring {
   position: absolute; border-radius: 50%;
-  border: 1px solid var(--border);
-  opacity: 0; transition: all 0.1s ease;
+  border: 1px solid var(--border); opacity: 0; transition: all 0.1s ease;
 }
 .ring1 { width: 56px; height: 56px; }
 .ring2 { width: 76px; height: 76px; }
-
-/* ON state */
 .indicator-on .indicator-core {
   background: var(--amber);
   box-shadow: 0 0 30px var(--amber), 0 0 60px var(--amber-dim);
@@ -313,16 +252,10 @@ textarea::placeholder { color: var(--text-dim); }
   border-color: var(--amber-dim); opacity: 0.3;
   animation: pulse-ring 0.3s ease-out 0.05s forwards;
 }
-
-/* TX-bit-specific coloring */
-.indicator-bit-active .indicator-core { background: var(--green); box-shadow: 0 0 25px var(--green); border-color: var(--green); }
-
 .indicator-state {
   font-family: var(--font-disp); font-size: 11px; font-weight: 700;
   letter-spacing: 0.2em; color: var(--text-dim);
 }
-
-/* ── TX Log ── */
 .tx-log {
   background: var(--bg3); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 8px 10px;
@@ -334,61 +267,45 @@ textarea::placeholder { color: var(--text-dim); }
   border-bottom: 1px solid var(--border);
   padding-bottom: 2px;
 }
-.log-entry.ok  { color: var(--green); }
-.log-entry.err { color: var(--red); }
-.log-entry.tx  { color: var(--amber); }
+.log-entry.ok   { color: var(--green); }
+.log-entry.err  { color: var(--red); }
+.log-entry.tx   { color: var(--amber); }
 .log-entry.info { color: var(--cyan); }
-
-/* ── Progress ── */
 .progress-wrap { margin-top: 12px; }
 .progress-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-dim); margin-bottom: 4px; }
 .progress-track { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
 .progress-fill {
   height: 100%; width: 0%;
   background: linear-gradient(90deg, var(--amber), var(--cyan));
-  box-shadow: 0 0 8px var(--amber);
-  transition: width 0.1s ease;
+  box-shadow: 0 0 8px var(--amber); transition: width 0.1s ease;
 }
-
-/* ── Screen Flash (iOS fallback) ── */
 .screen-flash {
   position: fixed; inset: 0; z-index: 500;
   pointer-events: none; transition: background 0.05s;
 }
-.screen-flash.on { background: rgba(255,255,255,0.98); }
+.screen-flash.on  { background: rgba(255,255,255,0.98); }
 .screen-flash.off { background: rgba(0,0,0,0.92); }
 
-/* =====================================================
-   RECEIVER
-   ===================================================== */
+/* RECEIVER */
 .receiver-grid { grid-template-columns: 1.1fr 0.9fr; }
 @media (max-width: 720px) { .receiver-grid { grid-template-columns: 1fr; } }
-
 .video-wrap {
-  position: relative;
-  width: 100%; padding-bottom: 75%; /* 4:3 ratio */
+  position: relative; width: 100%; padding-bottom: 75%;
   background: #000; border: 1px solid var(--border2);
   border-radius: var(--radius); overflow: hidden;
 }
 #receiver-video {
   position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  object-fit: cover;
+  width: 100%; height: 100%; object-fit: cover;
 }
 .hidden-canvas { display: none; }
-
-/* ── Reticle Overlay ── */
 .reticle-overlay {
   position: absolute; inset: 0;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   gap: 12px; pointer-events: none;
 }
-.reticle-box {
-  width: 50px; height: 50px;
-  position: relative;
-}
-/* Corners instead of a full border — more tactical feel */
+.reticle-box { width: 50px; height: 50px; position: relative; }
 .reticle-corner {
   position: absolute; width: 12px; height: 12px;
   border-color: var(--green); border-style: solid;
@@ -397,10 +314,7 @@ textarea::placeholder { color: var(--text-dim); }
 .reticle-corner.tr { top: 0; right: 0; border-width: 2px 2px 0 0; }
 .reticle-corner.bl { bottom: 0; left: 0; border-width: 0 0 2px 2px; }
 .reticle-corner.br { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
-/* Animated glow when active */
-.reticle-box.scanning .reticle-corner {
-  animation: reticle-pulse 1s ease-in-out infinite;
-}
+.reticle-box.scanning .reticle-corner { animation: reticle-pulse 1s ease-in-out infinite; }
 .reticle-box.locked .reticle-corner {
   border-color: var(--amber);
   animation: reticle-lock 0.5s ease-in-out infinite alternate;
@@ -412,8 +326,6 @@ textarea::placeholder { color: var(--text-dim); }
   background: rgba(0,0,0,0.55); padding: 3px 8px; border-radius: 2px;
   text-shadow: 0 0 8px var(--green);
 }
-
-/* ── RX State Badge ── */
 .rx-state-badge {
   position: absolute; top: 8px; left: 8px;
   font-family: var(--font-disp); font-size: 9px;
@@ -428,27 +340,33 @@ textarea::placeholder { color: var(--text-dim); }
 .rx-state-badge.reading     { border-color: var(--green); color: var(--green); background: rgba(57,255,20,0.08); }
 .rx-state-badge.done        { border-color: var(--cyan); color: var(--cyan); }
 
-/* ── Brightness Graph ── */
+/* NEW: checksum badge on video */
+.checksum-badge {
+  position: absolute; top: 8px; right: 8px;
+  font-family: var(--font-disp); font-size: 9px; font-weight: 700;
+  letter-spacing: 0.15em; padding: 3px 8px; border-radius: 2px;
+  background: rgba(0,0,0,0.7); border: 1px solid var(--border2);
+  color: var(--text-dim); text-transform: uppercase;
+  transition: all var(--trans);
+}
+.checksum-badge.ok  { border-color: var(--green); color: var(--green); background: rgba(57,255,20,0.1); }
+.checksum-badge.err { border-color: var(--red);   color: var(--red);   background: rgba(255,49,49,0.1); }
+
 .graph-canvas {
   width: 100%; height: 120px;
   background: var(--bg3); border: 1px solid var(--border);
   border-radius: var(--radius); display: block;
 }
-
-/* ── RX Stats Row ── */
 .rx-stats {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
   margin-top: 10px;
 }
 .stat-box {
   background: var(--bg3); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 8px;
-  text-align: center;
+  border-radius: var(--radius); padding: 8px; text-align: center;
 }
 .stat-label { font-size: 8px; letter-spacing: 0.15em; color: var(--text-dim); display: block; }
 .stat-val   { font-family: var(--font-disp); font-size: 14px; color: var(--amber); display: block; margin-top: 2px; }
-
-/* ── Bit Buffer ── */
 .bit-buffer {
   background: var(--bg3); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 10px 12px;
@@ -459,8 +377,6 @@ textarea::placeholder { color: var(--text-dim); }
 .bit-buffer .b1 { color: var(--green); }
 .bit-buffer .b0 { color: var(--red-dim); }
 .bit-buffer .preamble-bit { color: var(--cyan); }
-
-/* ── Decoded Output ── */
 .decoded-output {
   background: var(--bg2); border: 2px solid var(--border2);
   border-radius: var(--radius); padding: 14px 16px;
@@ -474,24 +390,22 @@ textarea::placeholder { color: var(--text-dim); }
 .decoded-output.flash {
   box-shadow: inset 0 0 40px rgba(57,255,20,0.2), 0 0 20px rgba(57,255,20,0.15);
 }
+.decoded-output.error {
+  color: var(--red);
+  box-shadow: inset 0 0 40px rgba(255,49,49,0.2), 0 0 20px rgba(255,49,49,0.15);
+}
 
-/* =====================================================
-   ANIMATIONS
-   ===================================================== */
 @keyframes flicker {
   0%, 90%, 100% { opacity: 1; }
-  91%           { opacity: 0.7; }
-  93%           { opacity: 1; }
-  95%           { opacity: 0.5; }
-  97%           { opacity: 0.9; }
+  91% { opacity: 0.7; } 93% { opacity: 1; }
+  95% { opacity: 0.5; } 97% { opacity: 0.9; }
 }
 @keyframes pulse-ring {
   from { transform: scale(0.8); opacity: 0.7; }
   to   { transform: scale(1.1); opacity: 0; }
 }
 @keyframes reticle-pulse {
-  0%, 100% { opacity: 1; }
-  50%      { opacity: 0.4; }
+  0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
 }
 @keyframes reticle-lock {
   from { box-shadow: 0 0 0 0 rgba(245,166,35,0); }
@@ -502,13 +416,10 @@ textarea::placeholder { color: var(--text-dim); }
   to   { opacity: 1; transform: translateY(0); }
 }
 .log-entry { animation: fadeIn 0.15s ease; }
-
-/* ── Custom scrollbar ── */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: var(--bg2); }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--amber-dim); }
-
   </style>
 </head>
 <body>
@@ -518,11 +429,9 @@ textarea::placeholder { color: var(--text-dim); }
     </div>
   </noscript>
 
-
-  <!-- Scanline overlay for CRT effect -->
   <div class="scanlines"></div>
 
-  <!-- ==================== BOOT SCREEN ==================== -->
+  <!-- BOOT SCREEN -->
   <div id="boot-screen">
     <div class="boot-logo">
       <span class="boot-title">LI-FI</span>
@@ -532,14 +441,12 @@ textarea::placeholder { color: var(--text-dim); }
     </div>
   </div>
 
-  <!-- ==================== MAIN APP ==================== -->
+  <!-- MAIN APP -->
   <div id="app" class="hidden">
-
-    <!-- Header -->
     <header class="app-header">
       <div class="header-left">
         <span class="logo-text">LI-FI</span>
-        <span class="logo-tag">OWC v1.0</span>
+        <span class="logo-tag">OWC v2.0</span>
       </div>
       <div class="mode-toggle">
         <button id="btn-sender" class="mode-btn active" data-mode="sender">⟶ SENDER</button>
@@ -551,17 +458,18 @@ textarea::placeholder { color: var(--text-dim); }
       </div>
     </header>
 
-    <!-- ==================== SENDER PANEL ==================== -->
+    <!-- SENDER PANEL -->
     <section id="panel-sender" class="panel active">
       <div class="panel-grid">
-
-        <!-- Left: Input & Controls -->
         <div class="sender-controls">
           <div class="section-label">// INPUT MESSAGE</div>
           <textarea id="sender-input" placeholder="Type your message here..." maxlength="128"></textarea>
           <div class="char-count"><span id="char-count">0</span>/128</div>
 
-          <div class="section-label">// BINARY PAYLOAD</div>
+          <div class="section-label">
+            // BINARY PAYLOAD
+            <span class="encoding-tag">MANCHESTER</span>
+          </div>
           <div id="binary-display" class="binary-display">
             <span class="dim">Binary output will appear here...</span>
           </div>
@@ -569,11 +477,13 @@ textarea::placeholder { color: var(--text-dim); }
           <div class="section-label">// PROTOCOL FRAME</div>
           <div id="frame-display" class="frame-display">
             <span class="preamble-label">PREAMBLE</span>
-            <span id="frame-preamble" class="frame-preamble">101011</span>
+            <span id="frame-preamble" class="frame-preamble">—</span>
             <span class="data-label">DATA</span>
             <span id="frame-data" class="frame-data dim">—</span>
+            <span class="checksum-label">CRC</span>
+            <span id="frame-checksum" class="frame-checksum">—</span>
             <span class="postamble-label">POSTAMBLE</span>
-            <span id="frame-postamble" class="frame-postamble">000000</span>
+            <span id="frame-postamble" class="frame-postamble">—</span>
           </div>
 
           <div class="btn-row">
@@ -582,7 +492,6 @@ textarea::placeholder { color: var(--text-dim); }
           </div>
         </div>
 
-        <!-- Right: Visual Indicator & Status -->
         <div class="sender-visual">
           <div class="section-label">// SIGNAL INDICATOR</div>
           <div class="flashlight-indicator-wrap">
@@ -609,25 +518,19 @@ textarea::placeholder { color: var(--text-dim); }
             </div>
           </div>
 
-          <!-- Screen flash overlay for iOS fallback -->
           <div id="screen-flash" class="screen-flash hidden"></div>
         </div>
-
       </div>
     </section>
 
-    <!-- ==================== RECEIVER PANEL ==================== -->
+    <!-- RECEIVER PANEL -->
     <section id="panel-receiver" class="panel hidden">
       <div class="panel-grid receiver-grid">
-
-        <!-- Left: Video + Reticle -->
         <div class="receiver-video-col">
           <div class="section-label">// OPTICAL SENSOR FEED</div>
           <div class="video-wrap" id="video-wrap">
             <video id="receiver-video" autoplay muted playsinline></video>
             <canvas id="hidden-canvas" class="hidden-canvas"></canvas>
-
-            <!-- Overlay reticle -->
             <div class="reticle-overlay" id="reticle-overlay">
               <div class="reticle-box" id="reticle-box">
                 <span class="reticle-corner tl"></span>
@@ -637,9 +540,8 @@ textarea::placeholder { color: var(--text-dim); }
               </div>
               <div class="reticle-label">ALIGN FLASHLIGHT INSIDE BOX</div>
             </div>
-
-            <!-- State badge on video -->
             <div class="rx-state-badge" id="rx-state-badge">IDLE</div>
+            <div class="checksum-badge hidden" id="checksum-badge">CRC —</div>
           </div>
 
           <div class="btn-row" style="margin-top:12px">
@@ -649,7 +551,6 @@ textarea::placeholder { color: var(--text-dim); }
           </div>
         </div>
 
-        <!-- Right: Graph + Decoder output -->
         <div class="receiver-data-col">
           <div class="section-label">// BRIGHTNESS SIGNAL (LIVE)</div>
           <canvas id="graph-canvas" class="graph-canvas"></canvas>
@@ -688,72 +589,127 @@ textarea::placeholder { color: var(--text-dim); }
             <div class="log-entry dim">Receiver not started.</div>
           </div>
         </div>
-
       </div>
     </section>
+  </div>
 
-  </div><!-- /app -->
   <script>
 (() => {
   "use strict";
 
-  // ============================================================
-  //  LI-FI OWC TERMINAL — single-file build
-  //  Optical Wireless Communication via On-Off Keying (OOK)
-  // ============================================================
+  // ─────────────────────────────────────────────────────────────────────────
+  //  PROTOCOL CONSTANTS v2  (Manchester + Checksum)
+  //
+  //  Key changes from v1:
+  //  1. MANCHESTER ENCODING — each data bit becomes a 2-symbol transition:
+  //       data-1 → HIGH then LOW  (10)
+  //       data-0 → LOW then HIGH  (01)
+  //     Benefits: guaranteed mid-bit transition for clock recovery,
+  //               no long runs of same level, DC-balanced.
+  //
+  //  2. LONGER / MORE UNIQUE PREAMBLE (10 bits of raw Manchester-encoded
+  //     pattern) — statistically nearly impossible to see in random noise.
+  //
+  //  3. 8-BIT XOR CHECKSUM appended before postamble — lets receiver
+  //     detect corrupted payloads.
+  //
+  //  4. MAJORITY-VOTE SAMPLING — each symbol sampled 3× at T/3 intervals;
+  //     requires 2 of 3 readings to agree (kills single-sample glitches).
+  //
+  //  5. HYSTERESIS THRESHOLD — separate lo-threshold and hi-threshold
+  //     prevent chattering near the boundary.
+  //
+  //  6. ADAPTIVE AMBIENT EMA — threshold tracks slow DC drift while being
+  //     immune to fast modulation.
+  // ─────────────────────────────────────────────────────────────────────────
 
-  // ─────────────────────────────────────────────
-  //  PROTOCOL CONSTANTS
-  // ─────────────────────────────────────────────
-  const BIT_RATE_MS       = 300;      // milliseconds per bit
-  const PREAMBLE          = "101011"; // 6-bit start-of-frame marker
-  const POSTAMBLE         = "000000"; // 6-bit end-of-frame marker
-  const THRESHOLD_OFFSET  = 30;       // brightness units above ambient to call a "1"
-  const CALIB_DURATION_MS = 2000;     // ambient measurement window
-  const ROI_SIZE          = 50;       // pixels — size of the sample region
-  const GRAPH_HISTORY     = 120;      // number of samples to show on chart
-  const EMA_ALPHA         = 0.02;     // ambient drift tracking coefficient
+  // Bit period in ms. Half-period = one Manchester symbol.
+  const BIT_RATE_MS       = 300;       // full-bit period
+  const HALF_BIT_MS       = BIT_RATE_MS / 2;  // one Manchester symbol
 
-  // ─────────────────────────────────────────────
-  //  Small helpers
-  // ─────────────────────────────────────────────
-  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  // Raw bit sequences (before Manchester encoding)
+  const PREAMBLE_RAW      = "1010110011"; // 10 raw bits
+  const POSTAMBLE_RAW     = "0000000000"; // 10 raw bits
 
-  const $ = (id) => document.getElementById(id);
-  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+  // After Manchester encoding these become 20-symbol sequences
+  const PREAMBLE_MAN      = manchesterEncode(PREAMBLE_RAW);
+  const POSTAMBLE_MAN     = manchesterEncode(POSTAMBLE_RAW);
 
-  function safeText(el, text) {
-    if (!el) return;
-    el.textContent = text;
+  const THRESHOLD_HYSTER  = 15;   // hysteresis band (±)
+  const CALIB_DURATION_MS = 2500; // ambient measurement window
+  const ROI_SIZE          = 50;   // centre-crop square (px)
+  const GRAPH_HISTORY     = 120;  // graph sample history
+  const EMA_ALPHA         = 0.015; // ambient drift EMA speed (slower → more stable)
+  const VOTE_SAMPLES      = 3;    // majority-vote sub-samples per symbol
+
+  // ─────────────────────────────────────────────────────────────────────────
+  //  Manchester codec helpers
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /** Encode raw binary string → Manchester symbols (each bit → 2 symbols). */
+  function manchesterEncode(bits) {
+    return bits.split("").map(b => b === "1" ? "10" : "01").join("");
   }
 
-  /** Convert text → ASCII binary (8 bits per char). */
+  /**
+   * Decode Manchester symbols → raw bits.
+   * Expects pairs: "10"→1, "01"→0.
+   * Returns null if an invalid pair is encountered.
+   */
+  function manchesterDecode(symbols) {
+    if (symbols.length % 2 !== 0) return null;
+    let out = "";
+    for (let i = 0; i < symbols.length; i += 2) {
+      const pair = symbols[i] + symbols[i + 1];
+      if (pair === "10") out += "1";
+      else if (pair === "01") out += "0";
+      else return null; // invalid Manchester symbol
+    }
+    return out;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  //  8-bit XOR checksum
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /** Compute XOR checksum over a raw binary string (raw data bits). */
+  function computeChecksum(rawBits) {
+    let val = 0;
+    for (let i = 0; i < rawBits.length; i += 8) {
+      const byte = rawBits.slice(i, i + 8).padEnd(8, "0");
+      val ^= parseInt(byte, 2);
+    }
+    return val.toString(2).padStart(8, "0"); // 8 raw bits
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  //  Util
+  // ─────────────────────────────────────────────────────────────────────────
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+  const $ = id => document.getElementById(id);
+  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+  const safeText = (el, t) => { if (el) el.textContent = t; };
+
   function textToBinary(text) {
-    return Array.from(text).map((ch) =>
+    return Array.from(text).map(ch =>
       ch.charCodeAt(0).toString(2).padStart(8, "0")
     ).join("");
   }
 
-  /** Convert ASCII binary (8 bits per char) → text. */
   function binaryToText(binary) {
     const trimmed = binary.slice(0, Math.floor(binary.length / 8) * 8);
     let out = "";
     for (let i = 0; i < trimmed.length; i += 8) {
-      const byte = trimmed.slice(i, i + 8);
-      const n = parseInt(byte, 2);
+      const n = parseInt(trimmed.slice(i, i + 8), 2);
       out += String.fromCharCode(Number.isFinite(n) ? n : 0);
     }
     return out;
   }
 
-  /** Timestamped log entry (fails gracefully if element missing). */
   function log(elementId, message, type = "") {
     const container = $(elementId);
-    if (!container) {
-      console[type === "err" ? "error" : "log"](`[${elementId}] ${message}`);
-      return;
-    }
+    if (!container) { console[type === "err" ? "error" : "log"](`[${elementId}] ${message}`); return; }
     const entry = document.createElement("div");
     entry.className = `log-entry ${type}`.trim();
     const now = new Date();
@@ -763,100 +719,73 @@ textarea::placeholder { color: var(--text-dim); }
     container.scrollTop = container.scrollHeight;
   }
 
-  /** Header signal indicator */
   function setSignal(state, label) {
-    const dot = $("signal-dot");
-    const lbl = $("signal-label");
+    const dot = $("signal-dot"), lbl = $("signal-label");
     if (dot) dot.className = `signal-dot ${state}`.trim();
     if (lbl) lbl.textContent = label;
   }
 
-  /** Read CSS variables for Canvas colors (Canvas can't use var(--x) directly). */
   function cssVar(name, fallback) {
-    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-    return v || fallback;
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
   }
 
   // ============================================================
-  //  BOOT ANIMATION
+  //  BOOT
   // ============================================================
   const BOOT_MESSAGES = [
     "CHECKING HARDWARE...",
-    "LOADING OOK PROTOCOL...",
-    "CALIBRATING THRESHOLDS...",
-    "INITIALISING CAMERA STACK...",
+    "LOADING MANCHESTER-OOK STACK...",
+    "CONFIGURING HYSTERESIS THRESHOLDS...",
+    "INITIALISING CHECKSUM ENGINE...",
+    "PRIMING CAMERA STACK...",
     "READY.",
   ];
 
   function bootSequence() {
-    const bar = $("boot-bar");
-    const status = $("boot-status");
-    const boot = $("boot-screen");
-    const app = $("app");
-
-    if (!bar || !status || !boot || !app) return;
-
+    const bar = $("boot-bar"), status = $("boot-status");
+    const boot = $("boot-screen"), app = $("app");
+    if (!bar || !boot || !app) return;
     let i = 0;
-    const interval = setInterval(() => {
-      const pct = ((i + 1) / BOOT_MESSAGES.length) * 100;
-      bar.style.width = `${pct}%`;
-      status.textContent = BOOT_MESSAGES[i];
-      i++;
-      if (i >= BOOT_MESSAGES.length) {
-        clearInterval(interval);
-        setTimeout(() => {
-          boot.classList.add("hidden");
-          app.classList.remove("hidden");
-        }, 400);
+    const iv = setInterval(() => {
+      bar.style.width = `${((i + 1) / BOOT_MESSAGES.length) * 100}%`;
+      if (status) status.textContent = BOOT_MESSAGES[i];
+      if (++i >= BOOT_MESSAGES.length) {
+        clearInterval(iv);
+        setTimeout(() => { boot.classList.add("hidden"); app.classList.remove("hidden"); }, 400);
       }
     }, 280);
   }
 
-  // ============================================================
-  //  Shared state (Sender + Receiver)
-  // ============================================================
   let rxState = "IDLE";
 
   // ============================================================
   //  MODE SWITCHING
   // ============================================================
   function setupModeSwitching(stopReceiverFn) {
-    $$(".mode-btn").forEach((btn) => {
+    $$(".mode-btn").forEach(btn => {
       btn.addEventListener("click", () => {
         const mode = btn.dataset.mode;
-
-        $$(".mode-btn").forEach((b) => b.classList.remove("active"));
+        $$(".mode-btn").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
-
-        const ps = $("panel-sender");
-        const pr = $("panel-receiver");
-
-        if (ps) {
-          ps.classList.toggle("active", mode === "sender");
-          ps.classList.toggle("hidden", mode !== "sender");
-        }
-        if (pr) {
-          pr.classList.toggle("active", mode === "receiver");
-          pr.classList.toggle("hidden", mode !== "receiver");
-        }
-
-        // Stop receiver if we leave RX view.
-        if (mode === "sender" && rxState !== "IDLE") {
-          stopReceiverFn?.();
-        }
+        const ps = $("panel-sender"), pr = $("panel-receiver");
+        if (ps) { ps.classList.toggle("active", mode === "sender"); ps.classList.toggle("hidden", mode !== "sender"); }
+        if (pr) { pr.classList.toggle("active", mode === "receiver"); pr.classList.toggle("hidden", mode !== "receiver"); }
+        if (mode === "sender" && rxState !== "IDLE") stopReceiverFn?.();
       });
     });
   }
 
   // ============================================================
-  //  ████████  SENDER MODULE  ████████
+  //  ████████  SENDER  ████████
   // ============================================================
   function setupSender() {
-    // DOM refs
     const senderInput    = $("sender-input");
     const charCountEl    = $("char-count");
     const binaryDisplay  = $("binary-display");
     const frameData      = $("frame-data");
+    const frameChecksum  = $("frame-checksum");
+    const framePreamble  = $("frame-preamble");
+    const framePostamble = $("frame-postamble");
     const btnConvert     = $("btn-convert");
     const btnTransmit    = $("btn-transmit");
     const indicatorWrap  = $("flashlight-indicator");
@@ -868,12 +797,14 @@ textarea::placeholder { color: var(--text-dim); }
     const screenFlash    = $("screen-flash");
 
     let txActive = false;
-    let torchStream = null;
     let torchTrack = null;
+    let torchStream = null;
     let useTorch = false;
+    // Store full Manchester frame here for transmit
+    let fullManFrame = "";
 
     function setIndicatorState(label, isOn) {
-      if (indicatorWrap) indicatorWrap.classList.toggle("indicator-on", isOn);
+      indicatorWrap?.classList.toggle("indicator-on", isOn);
       if (indicatorState) {
         indicatorState.textContent = label;
         indicatorState.style.color = isOn ? "var(--amber)" : "var(--text-dim)";
@@ -887,20 +818,13 @@ textarea::placeholder { color: var(--text-dim); }
     }
 
     async function initTorch() {
-      // Default: screen fallback
       useTorch = false;
-
       if (!navigator.mediaDevices?.getUserMedia) {
-        log("tx-log", "Camera API unavailable → screen fallback", "err");
-        return;
+        log("tx-log", "Camera API unavailable → screen fallback", "err"); return;
       }
-
       try {
-        torchStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" }
-        });
+        torchStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
         torchTrack = torchStream.getVideoTracks()[0];
-
         const caps = torchTrack.getCapabilities?.() || {};
         if (caps.torch) {
           useTorch = true;
@@ -908,9 +832,7 @@ textarea::placeholder { color: var(--text-dim); }
         } else {
           useTorch = false;
           log("tx-log", "Torch not supported → screen fallback", "info");
-          torchTrack.stop();
-          torchTrack = null;
-          torchStream = null;
+          torchTrack.stop(); torchTrack = null; torchStream = null;
         }
       } catch (err) {
         useTorch = false;
@@ -920,88 +842,79 @@ textarea::placeholder { color: var(--text-dim); }
 
     async function setLight(on) {
       if (useTorch && torchTrack) {
-        try {
-          await torchTrack.applyConstraints({ advanced: [{ torch: !!on }] });
-          return;
-        } catch {
-          // Torch failed mid-flight — fall back to screen for this bit
-          useTorch = false;
-          log("tx-log", "Torch constraint failed → screen fallback", "err");
-        }
+        try { await torchTrack.applyConstraints({ advanced: [{ torch: !!on }] }); return; }
+        catch { useTorch = false; log("tx-log", "Torch failed → screen fallback", "err"); }
       }
-
       if (!screenFlash) return;
-
-      // Screen modulation fallback: white for 1, black for 0
       screenFlash.classList.remove("hidden", "on", "off");
       screenFlash.classList.add(on ? "on" : "off");
     }
 
-    async function transmitFrame(frame) {
-      const total = frame.length;
-
+    /**
+     * Transmit Manchester-encoded frame.
+     * Each symbol = HALF_BIT_MS ms, so one data bit = 2 symbols = BIT_RATE_MS ms.
+     */
+    async function transmitFrame(manFrame) {
+      const total = manFrame.length;
       for (let i = 0; i < total; i++) {
-        const bit = frame[i];
-        const isOn = bit === "1";
+        const sym = manFrame[i];
+        const isOn = sym === "1";
 
         await setLight(isOn);
-        setIndicatorState(isOn ? "1 — LIGHT ON" : "0 — LIGHT OFF", isOn);
+        setIndicatorState(isOn ? "HIGH" : "LOW", isOn);
 
         const pct = Math.round(((i + 1) / total) * 100);
         if (progressFill) progressFill.style.width = `${pct}%`;
-        safeText(progressBit, `BIT ${i + 1}/${total}`);
+        safeText(progressBit, `SYM ${i + 1}/${total}`);
         safeText(progressPct, `${pct}%`);
 
-        await sleep(BIT_RATE_MS);
+        await sleep(HALF_BIT_MS);
       }
     }
 
-    // Live char counter
     senderInput?.addEventListener("input", () => {
       safeText(charCountEl, String(senderInput.value.length));
     });
 
-    // Encode
     btnConvert?.addEventListener("click", () => {
       const text = (senderInput?.value || "").trim();
-      if (!text) {
-        log("tx-log", "Type a message first.", "err");
-        return;
-      }
+      if (!text) { log("tx-log", "Type a message first.", "err"); return; }
 
-      const binary = textToBinary(text);
+      // 1. Raw binary
+      const rawBits = textToBinary(text);
 
+      // 2. Compute 8-bit XOR checksum (raw bits)
+      const crcBits = computeChecksum(rawBits);
+
+      // 3. Manchester-encode: preamble + data + crc + postamble
+      const manData = manchesterEncode(rawBits);
+      const manCrc  = manchesterEncode(crcBits);
+      fullManFrame  = PREAMBLE_MAN + manData + manCrc + POSTAMBLE_MAN;
+
+      // UI updates
       if (binaryDisplay) {
-        binaryDisplay.innerHTML = binary.split("").map((b) =>
+        binaryDisplay.innerHTML = rawBits.split("").map(b =>
           `<span class="bit-${b}">${b}</span>`
-        ).join("");
+        ).join("") + `<span class="dim"> CRC:</span>` +
+        crcBits.split("").map(b => `<span class="bit-${b}">${b}</span>`).join("");
       }
 
-      if (frameData) {
-        frameData.textContent = binary;
-        frameData.classList.remove("dim");
-      }
+      if (framePreamble) framePreamble.textContent = PREAMBLE_RAW + " (man)";
+      if (frameData)     { frameData.textContent = rawBits; frameData.classList.remove("dim"); }
+      if (frameChecksum) { frameChecksum.textContent = crcBits; }
+      if (framePostamble) framePostamble.textContent = POSTAMBLE_RAW + " (man)";
 
       if (btnTransmit) btnTransmit.disabled = false;
-      log("tx-log", `Encoded "${text}" → ${binary.length} bits`, "info");
+      log("tx-log", `Encoded "${text}" → ${rawBits.length}b data + 8b CRC`, "info");
+      log("tx-log", `Manchester frame: ${fullManFrame.length} symbols @ ${HALF_BIT_MS}ms/sym`, "info");
     });
 
-    // Transmit
     btnTransmit?.addEventListener("click", async () => {
-      if (txActive) return;
-
-      const binary = frameData?.textContent || "";
-      if (!binary || binary === "—") {
-        log("tx-log", "Nothing to transmit. Encode a message first.", "err");
-        return;
-      }
+      if (txActive || !fullManFrame) { log("tx-log", "Encode a message first.", "err"); return; }
 
       await initTorch();
 
-      const fullFrame = PREAMBLE + binary + POSTAMBLE;
-      log("tx-log", `Frame: ${fullFrame.length} bits total`, "info");
-      log("tx-log", "Transmitting...", "tx");
-
+      log("tx-log", `Transmitting ${fullManFrame.length} symbols...`, "tx");
       txActive = true;
       if (btnTransmit) btnTransmit.disabled = true;
       if (btnConvert) btnConvert.disabled = true;
@@ -1009,36 +922,24 @@ textarea::placeholder { color: var(--text-dim); }
       setSignal("busy", "TRANSMITTING");
 
       try {
-        await transmitFrame(fullFrame);
+        await transmitFrame(fullManFrame);
       } finally {
         txActive = false;
         if (btnTransmit) btnTransmit.disabled = false;
         if (btnConvert) btnConvert.disabled = false;
-
-        // Turn off the light and restore UI visibility
         await setLight(false);
         setIndicatorState("STANDBY", false);
         setSignal("idle", "IDLE");
         log("tx-log", "Transmission complete.", "ok");
-
-        // Hide screen flash overlay after transmit (usability)
         if (!useTorch) hideScreenFlash();
-
-        // Release torch track if we used it
-        if (torchTrack) {
-          torchTrack.stop();
-          torchTrack = null;
-        }
-        if (torchStream) {
-          torchStream.getTracks().forEach((t) => t.stop());
-          torchStream = null;
-        }
+        if (torchTrack) { torchTrack.stop(); torchTrack = null; }
+        if (torchStream) { torchStream.getTracks().forEach(t => t.stop()); torchStream = null; }
       }
     });
   }
 
   // ============================================================
-  //  ████████  RECEIVER MODULE  ████████
+  //  ████████  RECEIVER  ████████
   // ============================================================
   function setupReceiver() {
     const rxVideo       = $("receiver-video");
@@ -1049,6 +950,7 @@ textarea::placeholder { color: var(--text-dim); }
     const btnCalibrate  = $("btn-calibrate");
     const reticleBox    = $("reticle-box");
     const rxStateBadge  = $("rx-state-badge");
+    const checksumBadge = $("checksum-badge");
     const statThreshold = $("stat-threshold");
     const statCurrent   = $("stat-current");
     const statStateEl   = $("stat-state");
@@ -1056,36 +958,44 @@ textarea::placeholder { color: var(--text-dim); }
     const bitBufferEl   = $("bit-buffer");
     const decodedOutput = $("decoded-output");
 
-    const graphCtx  = graphCanvas?.getContext?.("2d") || null;
-    const hiddenCtx = hiddenCanvas?.getContext?.("2d", { willReadFrequently: true }) || null;
+    const graphCtx  = graphCanvas?.getContext("2d") || null;
+    const hiddenCtx = hiddenCanvas?.getContext("2d", { willReadFrequently: true }) || null;
 
     let rxStream       = null;
     let rxAnimFrame    = null;
-    let threshold      = 128;
-    let ambientBase    = 0;
-    let rxBitBuffer    = [];
-    let preambleWindow = [];
-    let graphData      = [];
     let rxLoopActive   = false;
     let sampleInterval = null;
     let currentBrightness = 0;
+    let graphData      = [];
+
+    // ── Threshold with hysteresis ──
+    // "HIGH" if brightness > threshHi
+    // "LOW"  if brightness < threshLo
+    // else keep previous
+    let ambientBase    = 0;
+    let threshHi       = 128 + THRESHOLD_HYSTER;
+    let threshLo       = 128 - THRESHOLD_HYSTER;
+
+    // ── Receiver state machine ──
+    let rxSymbolBuffer  = []; // raw "0"/"1" Manchester symbols received since last reset
+    let preambleWindow  = []; // sliding window for preamble detection
+    let lastLevel       = "0"; // for hysteresis carry-over
 
     const GREEN = cssVar("--green", "#39ff14");
 
     function setRxState(newState) {
       rxState = newState;
-
       if (rxStateBadge) {
         rxStateBadge.className = `rx-state-badge ${newState.toLowerCase()}`.trim();
         rxStateBadge.textContent = newState;
       }
       safeText(statStateEl, newState);
-
       reticleBox?.classList.remove("scanning", "locked");
       if (newState === "SCANNING") reticleBox?.classList.add("scanning");
       if (newState === "READING")  reticleBox?.classList.add("locked");
     }
 
+    // ── Graph ──
     function resizeGraphCanvas() {
       if (!graphCanvas) return;
       const rect = graphCanvas.getBoundingClientRect();
@@ -1095,98 +1005,40 @@ textarea::placeholder { color: var(--text-dim); }
     window.addEventListener("resize", resizeGraphCanvas);
     resizeGraphCanvas();
 
-    function updateBitBufferUI(bits, mode) {
-      if (!bitBufferEl) return;
-      if (!bits.length) {
-        bitBufferEl.innerHTML = '<span class="dim">—</span>';
-        return;
-      }
-      bitBufferEl.innerHTML = bits.map((b) => {
-        let cls = b === "1" ? "b1" : "b0";
-        if (mode === "preamble") cls = "preamble-bit";
-        return `<span class="${cls}">${b}</span>`;
-      }).join("");
-    }
-
-    function safeExtractRoiBrightness() {
-      if (!hiddenCanvas || !hiddenCtx || !rxVideo) return 0;
-
-      const W = hiddenCanvas.width;
-      const H = hiddenCanvas.height;
-      if (!W || !H) return 0;
-
-      try {
-        hiddenCtx.drawImage(rxVideo, 0, 0, W, H);
-
-        const roiX = Math.floor((W - ROI_SIZE) / 2);
-        const roiY = Math.floor((H - ROI_SIZE) / 2);
-
-        const imageData = hiddenCtx.getImageData(roiX, roiY, ROI_SIZE, ROI_SIZE);
-        const px = imageData.data;
-
-        let total = 0;
-        const n = ROI_SIZE * ROI_SIZE;
-
-        for (let i = 0; i < px.length; i += 4) {
-          const r = px[i];
-          const g = px[i + 1];
-          const b = px[i + 2];
-          total += 0.299 * r + 0.587 * g + 0.114 * b;
-        }
-        return total / n;
-      } catch {
-        return 0;
-      }
-    }
-
     function drawGraph() {
       if (!graphCanvas || !graphCtx) return;
-
-      const W = graphCanvas.width;
-      const H = graphCanvas.height;
+      const W = graphCanvas.width, H = graphCanvas.height;
       graphCtx.clearRect(0, 0, W, H);
-
-      // Background
       graphCtx.fillStyle = "#0d1117";
       graphCtx.fillRect(0, 0, W, H);
-
       if (graphData.length < 2) return;
 
       const xStep = W / (GRAPH_HISTORY - 1);
 
-      const t = clamp(threshold, 0, 255);
-      const threshY = H - (t / 255) * H;
+      // Draw both threshold lines
+      [[threshHi, "rgba(245,166,35,0.6)", `H=${Math.round(threshHi)}`],
+       [threshLo, "rgba(0,229,255,0.4)", `L=${Math.round(threshLo)}`]].forEach(([t, col, lbl]) => {
+        const ty = H - (clamp(t, 0, 255) / 255) * H;
+        graphCtx.setLineDash([4, 4]);
+        graphCtx.strokeStyle = col;
+        graphCtx.lineWidth = 1;
+        graphCtx.beginPath(); graphCtx.moveTo(0, ty); graphCtx.lineTo(W, ty); graphCtx.stroke();
+        graphCtx.setLineDash([]);
+        graphCtx.fillStyle = col;
+        graphCtx.font = "9px 'Share Tech Mono'";
+        graphCtx.fillText(lbl, 4, Math.max(10, ty - 3));
+      });
 
-      // Threshold line
-      graphCtx.setLineDash([4, 4]);
-      graphCtx.strokeStyle = "rgba(245,166,35,0.5)";
-      graphCtx.lineWidth = 1;
-      graphCtx.beginPath();
-      graphCtx.moveTo(0, threshY);
-      graphCtx.lineTo(W, threshY);
-      graphCtx.stroke();
-      graphCtx.setLineDash([]);
-
-      // Label
-      graphCtx.fillStyle = "rgba(245,166,35,0.6)";
-      graphCtx.font = "9px 'Share Tech Mono'";
-      graphCtx.fillText(`T=${Math.round(t)}`, 4, Math.max(10, threshY - 3));
-
-      // Fill under curve
-      graphCtx.beginPath();
-      graphCtx.moveTo(0, H);
+      // Fill
+      graphCtx.beginPath(); graphCtx.moveTo(0, H);
       for (let i = 0; i < graphData.length; i++) {
-        const x = i * xStep;
-        const y = H - (clamp(graphData[i], 0, 255) / 255) * H;
-        graphCtx.lineTo(x, y);
+        graphCtx.lineTo(i * xStep, H - (clamp(graphData[i], 0, 255) / 255) * H);
       }
       graphCtx.lineTo((graphData.length - 1) * xStep, H);
       graphCtx.closePath();
-
-      const stop = clamp(t / 255, 0, 1);
       const grad = graphCtx.createLinearGradient(0, 0, 0, H);
       grad.addColorStop(0, "rgba(57,255,20,0.25)");
-      grad.addColorStop(stop, "rgba(57,255,20,0.08)");
+      grad.addColorStop(0.7, "rgba(57,255,20,0.08)");
       grad.addColorStop(1, "rgba(0,0,0,0)");
       graphCtx.fillStyle = grad;
       graphCtx.fill();
@@ -1196,10 +1048,8 @@ textarea::placeholder { color: var(--text-dim); }
       graphCtx.lineWidth = 1.5;
       graphCtx.strokeStyle = "rgba(57,255,20,0.9)";
       for (let i = 0; i < graphData.length; i++) {
-        const x = i * xStep;
-        const y = H - (clamp(graphData[i], 0, 255) / 255) * H;
-        if (i === 0) graphCtx.moveTo(x, y);
-        else graphCtx.lineTo(x, y);
+        const x = i * xStep, y = H - (clamp(graphData[i], 0, 255) / 255) * H;
+        i === 0 ? graphCtx.moveTo(x, y) : graphCtx.lineTo(x, y);
       }
       graphCtx.stroke();
 
@@ -1207,244 +1057,297 @@ textarea::placeholder { color: var(--text-dim); }
       const last = clamp(graphData[graphData.length - 1], 0, 255);
       const dotX = (graphData.length - 1) * xStep;
       const dotY = H - (last / 255) * H;
-
-      graphCtx.beginPath();
-      graphCtx.arc(dotX, dotY, 3, 0, Math.PI * 2);
-      graphCtx.fillStyle = last > t ? GREEN : "rgba(57,255,20,0.4)";
+      graphCtx.beginPath(); graphCtx.arc(dotX, dotY, 3, 0, Math.PI * 2);
+      graphCtx.fillStyle = last > threshHi ? GREEN : "rgba(57,255,20,0.4)";
       graphCtx.shadowColor = "rgba(57,255,20,0.8)";
-      graphCtx.shadowBlur = last > t ? 8 : 0;
+      graphCtx.shadowBlur = last > threshHi ? 8 : 0;
       graphCtx.fill();
       graphCtx.shadowBlur = 0;
     }
 
-    function startBrightnessLoop() {
-      rxLoopActive = true;
+    // ── ROI Brightness ──
+    function safeExtractRoiBrightness() {
+      if (!hiddenCanvas || !hiddenCtx || !rxVideo) return 0;
+      const W = hiddenCanvas.width, H = hiddenCanvas.height;
+      if (!W || !H) return 0;
+      try {
+        hiddenCtx.drawImage(rxVideo, 0, 0, W, H);
+        const roiX = Math.floor((W - ROI_SIZE) / 2);
+        const roiY = Math.floor((H - ROI_SIZE) / 2);
+        const px = hiddenCtx.getImageData(roiX, roiY, ROI_SIZE, ROI_SIZE).data;
+        let total = 0;
+        for (let i = 0; i < px.length; i += 4)
+          total += 0.299 * px[i] + 0.587 * px[i+1] + 0.114 * px[i+2];
+        return total / (ROI_SIZE * ROI_SIZE);
+      } catch { return 0; }
+    }
 
-      const loop = () => {
-        if (!rxLoopActive) return;
+    /**
+     * Majority-vote brightness reading.
+     * Takes VOTE_SAMPLES readings spread across a symbol period,
+     * returns the median. Kills single-frame glitches.
+     */
+    async function readBrightnessVoted(windowMs) {
+      const step = windowMs / (VOTE_SAMPLES + 1);
+      const readings = [];
+      for (let i = 0; i < VOTE_SAMPLES; i++) {
+        await sleep(step);
+        readings.push(safeExtractRoiBrightness());
+      }
+      readings.sort((a, b) => a - b);
+      return readings[Math.floor(VOTE_SAMPLES / 2)]; // median
+    }
 
-        if (rxVideo && rxVideo.readyState >= 2) {
-          currentBrightness = safeExtractRoiBrightness();
+    /**
+     * Apply hysteresis to brightness reading.
+     * Returns "1" or "0". Only updates if brightness crosses a band boundary.
+     */
+    function applyHysteresis(brightness) {
+      if (brightness > threshHi) { lastLevel = "1"; }
+      else if (brightness < threshLo) { lastLevel = "0"; }
+      // else: keep lastLevel (hysteresis hold)
+      return lastLevel;
+    }
 
-          safeText(statCurrent, String(Math.round(currentBrightness)));
+    function updateBitBufferUI(symbols, mode) {
+      if (!bitBufferEl) return;
+      if (!symbols.length) { bitBufferEl.innerHTML = '<span class="dim">—</span>'; return; }
+      bitBufferEl.innerHTML = symbols.map(b => {
+        const cls = mode === "preamble" ? "preamble-bit" : (b === "1" ? "b1" : "b0");
+        return `<span class="${cls}">${b}</span>`;
+      }).join("");
+    }
 
-          graphData.push(currentBrightness);
-          if (graphData.length > GRAPH_HISTORY) graphData.shift();
+    function showChecksumBadge(ok) {
+      if (!checksumBadge) return;
+      checksumBadge.classList.remove("hidden", "ok", "err");
+      checksumBadge.classList.add(ok ? "ok" : "err");
+      checksumBadge.textContent = ok ? "CRC OK ✓" : "CRC ERR ✗";
+    }
 
-          drawGraph();
+    function decodeAndVerify(manSymbols) {
+      // Split off checksum (last 16 Manchester symbols = 8 raw bits CRC)
+      const crcSymbolLen = 16; // 8 raw bits × 2 symbols each
+      if (manSymbols.length < crcSymbolLen) {
+        log("rx-log", "Payload too short to contain CRC.", "err");
+        showChecksumBadge(false);
+        return;
+      }
+
+      const dataMans = manSymbols.slice(0, manSymbols.length - crcSymbolLen);
+      const crcMans  = manSymbols.slice(manSymbols.length - crcSymbolLen);
+
+      // Decode Manchester
+      const rawBits = manchesterDecode(dataMans);
+      const crcBits = manchesterDecode(crcMans);
+
+      if (rawBits === null || crcBits === null) {
+        log("rx-log", "Manchester decode error — invalid symbol pair(s).", "err");
+        showChecksumBadge(false);
+        if (decodedOutput) {
+          decodedOutput.textContent = "[DECODE ERROR]";
+          decodedOutput.classList.add("error");
+          setTimeout(() => decodedOutput.classList.remove("error"), 2000);
+        }
+        return;
+      }
+
+      // Verify checksum
+      const expectedCrc = computeChecksum(rawBits);
+      const crcOk = (expectedCrc === crcBits);
+      showChecksumBadge(crcOk);
+
+      const text = binaryToText(rawBits);
+
+      if (crcOk) {
+        log("rx-log", `CRC OK ✓  Decoded: "${text}"`, "ok");
+        if (decodedOutput) {
+          decodedOutput.classList.remove("error");
+          decodedOutput.textContent = text;
+          decodedOutput.classList.add("flash");
+          setTimeout(() => decodedOutput.classList.remove("flash"), 1000);
+        }
+        setSignal("active", "MSG RX");
+      } else {
+        log("rx-log", `CRC FAIL ✗  expected ${expectedCrc}, got ${crcBits}`, "err");
+        log("rx-log", `Corrupt decode attempt: "${text}"`, "err");
+        if (decodedOutput) {
+          decodedOutput.textContent = "[CHECKSUM ERROR — RETRANSMIT]";
+          decodedOutput.classList.add("error");
+          setTimeout(() => decodedOutput.classList.remove("error"), 2000);
+        }
+      }
+    }
+
+    /**
+     * Main async RX loop.
+     * Runs a time-sliced state machine: SCANNING → READING → DONE → SCANNING.
+     *
+     * In SCANNING mode: slide a window of PREAMBLE_MAN.length symbols,
+     * check for preamble match.
+     *
+     * In READING mode: collect symbols until POSTAMBLE_MAN is seen in tail.
+     *
+     * Each symbol = majority-vote read over HALF_BIT_MS.
+     */
+    async function rxMainLoop() {
+      setRxState("SCANNING");
+      preambleWindow = [];
+      rxSymbolBuffer = [];
+
+      while (rxLoopActive) {
+        // Read one Manchester symbol via majority vote
+        const brightness = await readBrightnessVoted(HALF_BIT_MS);
+        if (!rxLoopActive) break;
+
+        const sym = applyHysteresis(brightness);
+        currentBrightness = brightness;
+
+        safeText(statCurrent, String(Math.round(brightness)));
+        graphData.push(brightness);
+        if (graphData.length > GRAPH_HISTORY) graphData.shift();
+        drawGraph();
+
+        // Ambient drift correction (only in scanning to avoid corrupting signal)
+        if (rxState === "SCANNING") {
+          ambientBase = EMA_ALPHA * brightness + (1 - EMA_ALPHA) * ambientBase;
+          const mid = clamp(ambientBase, 10, 245);
+          threshHi = mid + THRESHOLD_HYSTER;
+          threshLo = mid - THRESHOLD_HYSTER;
+          safeText(statThreshold, `${Math.round(threshLo)}/${Math.round(threshHi)}`);
         }
 
+        if (rxState === "SCANNING") {
+          preambleWindow.push(sym);
+          if (preambleWindow.length > PREAMBLE_MAN.length) preambleWindow.shift();
+          updateBitBufferUI([...preambleWindow], "preamble");
+
+          if (preambleWindow.join("") === PREAMBLE_MAN) {
+            log("rx-log", `Preamble locked! (${PREAMBLE_MAN.length} symbols matched)`, "ok");
+            setRxState("READING");
+            rxSymbolBuffer = [];
+            preambleWindow = [];
+          }
+
+        } else if (rxState === "READING") {
+          rxSymbolBuffer.push(sym);
+          safeText(statBitsEl, String(rxSymbolBuffer.length));
+          updateBitBufferUI(rxSymbolBuffer, "data");
+
+          // Check tail for postamble
+          if (rxSymbolBuffer.length >= POSTAMBLE_MAN.length) {
+            const tail = rxSymbolBuffer.slice(-POSTAMBLE_MAN.length).join("");
+            if (tail === POSTAMBLE_MAN) {
+              const payload = rxSymbolBuffer.slice(0, rxSymbolBuffer.length - POSTAMBLE_MAN.length);
+              log("rx-log", `Postamble detected. Payload: ${payload.length} symbols`, "ok");
+              decodeAndVerify(payload);
+
+              setRxState("DONE");
+              // Reset after 2s and go back to scanning
+              await sleep(2000);
+              if (!rxLoopActive) break;
+              rxSymbolBuffer = [];
+              preambleWindow = [];
+              reticleBox?.classList.remove("locked");
+              setRxState("SCANNING");
+              log("rx-log", "Scanning for next message...", "info");
+            }
+          }
+        }
+      }
+    }
+
+    // ── Brightness animation loop (separate from rx for smooth graph even before rx starts) ──
+    function startBrightnessLoop() {
+      rxLoopActive = true;
+      const loop = () => {
+        if (!rxLoopActive) return;
+        // Graph is updated inside rxMainLoop; this loop only needed if not running rx
         rxAnimFrame = requestAnimationFrame(loop);
       };
-
       loop();
     }
 
     async function runCalibration() {
       setRxState("CALIBRATING");
-      log("rx-log", `Calibrating for ${CALIB_DURATION_MS}ms...`, "info");
-
+      log("rx-log", `Calibrating ${CALIB_DURATION_MS}ms...`, "info");
       const samples = [];
       const start = Date.now();
-
       while (Date.now() - start < CALIB_DURATION_MS) {
-        if (rxVideo && rxVideo.readyState >= 2) {
-          samples.push(safeExtractRoiBrightness());
-        }
+        if (rxVideo?.readyState >= 2) samples.push(safeExtractRoiBrightness());
         await sleep(50);
       }
-
-      if (!samples.length) {
-        // If video wasn't ready, fall back to current reading.
-        samples.push(currentBrightness || 0);
-      }
-
+      if (!samples.length) samples.push(currentBrightness || 0);
       ambientBase = samples.reduce((a, b) => a + b, 0) / samples.length;
-      threshold = clamp(ambientBase + THRESHOLD_OFFSET, 0, 255);
-
-      safeText(statThreshold, String(Math.round(threshold)));
-      log("rx-log", `Ambient: ${Math.round(ambientBase)}, Threshold: ${Math.round(threshold)}`, "ok");
-    }
-
-    function decodePayload(bits) {
-      const text = binaryToText(bits);
-      log("rx-log", `Decoded: "${text}"`, "ok");
-
-      if (decodedOutput) {
-        decodedOutput.textContent = text;
-        decodedOutput.classList.add("flash");
-        setTimeout(() => decodedOutput.classList.remove("flash"), 1000);
-      }
-      setSignal("active", "MSG RX");
-    }
-
-    function processBit(bit) {
-      safeText(statBitsEl, String(rxBitBuffer.length));
-
-      preambleWindow.push(bit);
-      if (preambleWindow.length > PREAMBLE.length) preambleWindow.shift();
-
-      if (rxState === "SCANNING") {
-        updateBitBufferUI([...preambleWindow], "preamble");
-
-        const windowStr = preambleWindow.join("");
-        if (windowStr === PREAMBLE) {
-          log("rx-log", `Preamble detected! [${PREAMBLE}]`, "ok");
-          setRxState("READING");
-          rxBitBuffer = [];
-          preambleWindow = [];
-          reticleBox?.classList.add("locked");
-        }
-        return;
-      }
-
-      if (rxState === "READING") {
-        rxBitBuffer.push(bit);
-        safeText(statBitsEl, String(rxBitBuffer.length));
-        updateBitBufferUI(rxBitBuffer, "data");
-
-        if (rxBitBuffer.length >= POSTAMBLE.length) {
-          const tail = rxBitBuffer.slice(-POSTAMBLE.length).join("");
-          if (tail === POSTAMBLE) {
-            const payloadBits = rxBitBuffer.slice(0, rxBitBuffer.length - POSTAMBLE.length).join("");
-
-            log("rx-log", `Postamble detected! Payload: ${payloadBits.length} bits`, "ok");
-            decodePayload(payloadBits);
-
-            setRxState("DONE");
-            setTimeout(() => {
-              rxBitBuffer = [];
-              preambleWindow = [];
-              reticleBox?.classList.remove("locked");
-              setRxState("SCANNING");
-              log("rx-log", "Scanning for next message...", "info");
-            }, 2000);
-          }
-        }
-        return;
-      }
-    }
-
-    function startBitSampler() {
-      clearInterval(sampleInterval);
-
-      sampleInterval = setInterval(() => {
-        if (rxState === "IDLE" || rxState === "CALIBRATING") return;
-
-        const brightness = currentBrightness;
-        const t = clamp(threshold, 0, 255);
-        const bit = brightness > t ? "1" : "0";
-
-        // Ambient drift correction: adjust baseline slowly when we're seeing "0" in scanning mode.
-        if (rxState === "SCANNING" && bit === "0") {
-          ambientBase = EMA_ALPHA * brightness + (1 - EMA_ALPHA) * ambientBase;
-          threshold = clamp(ambientBase + THRESHOLD_OFFSET, 0, 255);
-          safeText(statThreshold, String(Math.round(threshold)));
-        }
-
-        processBit(bit);
-      }, BIT_RATE_MS);
+      threshHi = clamp(ambientBase + THRESHOLD_HYSTER, 0, 255);
+      threshLo = clamp(ambientBase - THRESHOLD_HYSTER, 0, 255);
+      safeText(statThreshold, `${Math.round(threshLo)}/${Math.round(threshHi)}`);
+      log("rx-log", `Ambient: ${Math.round(ambientBase)}, Band: ${Math.round(threshLo)}–${Math.round(threshHi)}`, "ok");
     }
 
     async function startReceiver() {
       log("rx-log", "Requesting camera access...", "info");
-
       if (!navigator.mediaDevices?.getUserMedia) {
-        log("rx-log", "Camera API unavailable in this browser.", "err");
-        setSignal("error", "NO CAM");
-        return;
+        log("rx-log", "Camera API unavailable.", "err"); setSignal("error", "NO CAM"); return;
       }
-
       try {
         rxStream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "environment",
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          }
+          video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }
         });
       } catch (err) {
-        log("rx-log", `Camera error: ${err?.message || err}`, "err");
-        setSignal("error", "NO CAM");
-        return;
+        log("rx-log", `Camera error: ${err?.message || err}`, "err"); setSignal("error", "NO CAM"); return;
       }
-
       if (!rxVideo) return;
-
       rxVideo.srcObject = rxStream;
-
-      // Some browsers need explicit play()
       try { await rxVideo.play(); } catch { /* ignore */ }
-
-      await new Promise((resolve) => {
+      await new Promise(resolve => {
         if (rxVideo.readyState >= 2) return resolve();
         rxVideo.onloadedmetadata = () => resolve();
       });
-
       if (hiddenCanvas) {
         hiddenCanvas.width  = rxVideo.videoWidth  || 640;
         hiddenCanvas.height = rxVideo.videoHeight || 480;
       }
-
       btnRxStart?.classList.add("hidden");
       btnRxStop?.classList.remove("hidden");
       setSignal("active", "RX LIVE");
-      log("rx-log", `Camera started: ${hiddenCanvas?.width || "?"}×${hiddenCanvas?.height || "?"}`, "ok");
+      log("rx-log", `Camera: ${hiddenCanvas?.width || "?"}×${hiddenCanvas?.height || "?"}`, "ok");
 
-      startBrightnessLoop();
+      rxLoopActive = true;
       await runCalibration();
-
-      setRxState("SCANNING");
-      startBitSampler();
+      // Start the async RX loop
+      rxMainLoop().catch(err => log("rx-log", `RX loop error: ${err}`, "err"));
     }
 
     function stopReceiver() {
-      clearInterval(sampleInterval);
-      cancelAnimationFrame(rxAnimFrame);
       rxLoopActive = false;
-
-      if (rxStream) {
-        rxStream.getTracks().forEach((t) => t.stop());
-        rxStream = null;
-      }
+      cancelAnimationFrame(rxAnimFrame);
+      if (rxStream) { rxStream.getTracks().forEach(t => t.stop()); rxStream = null; }
       if (rxVideo) rxVideo.srcObject = null;
-
-      rxBitBuffer = [];
-      preambleWindow = [];
-      graphData = [];
-      currentBrightness = 0;
-
+      rxSymbolBuffer = []; preambleWindow = [];
+      graphData = []; currentBrightness = 0;
       btnRxStart?.classList.remove("hidden");
       btnRxStop?.classList.add("hidden");
       setSignal("idle", "IDLE");
       log("rx-log", "Receiver stopped.", "info");
-
       setRxState("IDLE");
     }
 
-    // Wire UI
     btnRxStart?.addEventListener("click", async () => {
       if (rxState !== "IDLE") return;
       await startReceiver();
     });
-
     btnRxStop?.addEventListener("click", stopReceiver);
-
     btnCalibrate?.addEventListener("click", async () => {
-      if (rxState === "SCANNING" || rxState === "READING") {
-        await runCalibration();
-      } else {
-        log("rx-log", "Start the receiver first, then calibrate.", "err");
-      }
+      if (rxState === "SCANNING" || rxState === "READING") await runCalibration();
+      else log("rx-log", "Start receiver first, then calibrate.", "err");
     });
 
-    // Pause camera loops when tab is hidden (mobile battery saver)
     document.addEventListener("visibilitychange", () => {
-      if (document.hidden && rxState !== "IDLE") {
-        // keep the camera stream running, but pause the animation loop
-        rxLoopActive = false;
-      } else if (!document.hidden && rxState !== "IDLE" && !rxLoopActive) {
-        startBrightnessLoop();
+      if (document.hidden) rxLoopActive = false;
+      else if (rxState !== "IDLE" && !rxLoopActive) {
+        rxLoopActive = true;
+        rxMainLoop().catch(() => {});
       }
     });
 
@@ -1456,15 +1359,10 @@ textarea::placeholder { color: var(--text-dim); }
   // ============================================================
   function init() {
     bootSequence();
-
     setupSender();
     const receiver = setupReceiver();
     setupModeSwitching(receiver?.stopReceiver);
-
-    // Initial signal state
     setSignal("idle", "IDLE");
-
-    // Friendly no-JS fallback message handled in HTML <noscript>
   }
 
   if (document.readyState === "loading") {
