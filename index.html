@@ -22,8 +22,8 @@
 <body>
   <h2>UFlash Sprint 1 (Website)</h2>
   <p class="small">
-    Needs <b>HTTPS</b> (or localhost) for camera access. :contentReference[oaicite:3]{index=3}
-    Torch control via web works mainly on some <b>Android Chrome</b>; iOS often won’t support torch, so sender falls back to screen flashing. :contentReference[oaicite:4]{index=4}
+    Needs <b>HTTPS</b> (or localhost) for camera access.
+    Torch control via web works mainly on some <b>Android Chrome</b>; iOS often won’t support torch, so sender falls back to screen flashing.
   </p>
 
   <div class="row">
@@ -81,6 +81,10 @@
 
       <p id="rxStatus" class="small mono">Status: idle</p>
       <p id="rxLive" class="small mono">Luma: - | Bits buffered: 0</p>
+
+      <!-- ADDED: show live bits even if preamble isn't detected -->
+      <p id="rxBits" class="small mono">Bits(last 40): -</p>
+
       <p id="rxDecoded" class="mono"></p>
 
       <video id="rxVideo" playsinline muted></video>
@@ -135,10 +139,10 @@
       senderStream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: "environment" } },
         audio: false
-      }); // secure contexts required :contentReference[oaicite:5]{index=5}
+      });
 
       senderVideo.srcObject = senderStream;
-      await senderVideo.play().catch(() => { /* ok hidden */ });
+      await senderVideo.play().catch(() => {});
 
       senderTrack = senderStream.getVideoTracks()[0];
       const caps = senderTrack.getCapabilities ? senderTrack.getCapabilities() : {};
@@ -161,7 +165,6 @@
   async function setTorch(on) {
     if (!senderTrack || !senderTorchSupported) return false;
     try {
-      // Torch is controlled via track constraints / applyConstraints :contentReference[oaicite:6]{index=6}
       await senderTrack.applyConstraints({ advanced: [{ torch: on }] });
       return true;
     } catch (e) {
@@ -228,12 +231,13 @@
   btnStopSend.addEventListener("click", stopSend);
 
   // ============================================================
-  // RECEIVER (CameraX-like in web: getUserMedia + canvas sampling)
+  // RECEIVER (getUserMedia + canvas sampling)
   // ============================================================
   const btnStartRx = document.getElementById("btnStartRx");
   const btnStopRx = document.getElementById("btnStopRx");
   const rxStatus = document.getElementById("rxStatus");
   const rxLive = document.getElementById("rxLive");
+  const rxBits = document.getElementById("rxBits"); // ADDED
   const rxDecoded = document.getElementById("rxDecoded");
   const payloadLen = document.getElementById("payloadLen");
   const tbMsRx = document.getElementById("tbMsRx");
@@ -275,7 +279,6 @@
       for (let x = x0; x < x1; x += step) {
         const idx = (y * w + x) * 4;
         const r = data[idx], g = data[idx + 1], b = data[idx + 2];
-        // perceived luma
         const l = 0.2126 * r + 0.7152 * g + 0.0722 * b;
         sum += l;
         count++;
@@ -290,10 +293,13 @@
     const recent = bitAvgs.slice(-40);
     const mn = Math.min(...recent);
     const mx = Math.max(...recent);
-    if ((mx - mn) < 5) return; // not enough contrast yet
+    if ((mx - mn) < 5) return;
 
     const thr = (mn + mx) / 2;
     const hard = recent.map(v => (v > thr ? 1 : 0));
+
+    // ADDED: show live bits even when not decoding
+    rxBits.textContent = `Bits(last 40): ${hard.join("")} | thr=${thr.toFixed(1)} mn=${mn.toFixed(1)} mx=${mx.toFixed(1)}`;
 
     const preBits = PREAMBLE.split("").map(ch => ch === "1" ? 1 : 0);
     const idx = indexOfSubseq(hard, preBits);
@@ -336,6 +342,7 @@
   async function startReceiver() {
     rxStatus.textContent = "Status: requesting rear camera…";
     rxDecoded.textContent = "";
+    rxBits.textContent = "Bits(last 40): -"; // reset
     bitAvgs.length = 0;
     winStart = -1; accSum = 0; accCount = 0;
 
@@ -343,7 +350,7 @@
       rxStream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: "environment" } },
         audio: false
-      }); // secure contexts required :contentReference[oaicite:7]{index=7}
+      });
 
       rxVideo.srcObject = rxStream;
       await rxVideo.play();
